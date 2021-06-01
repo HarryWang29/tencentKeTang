@@ -2,6 +2,7 @@ package main
 
 import (
 	"crawler/tencentKeTang/config"
+	"crawler/tencentKeTang/internal/httplib"
 	"crawler/tencentKeTang/project"
 	"flag"
 	"os"
@@ -27,6 +28,8 @@ func main() {
 	if c.Http.Cookie == "" {
 		panic("cookie is empty")
 	}
+	//设置日志
+	httplib.SetDebug(c.App.Debug)
 	//执行任务
 	if err := project.New(c).Do(taskUrl); err != nil {
 		panic(err)

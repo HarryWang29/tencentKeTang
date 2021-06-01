@@ -94,7 +94,7 @@ func (m *MediaInfo) Get() (vodUrl string, err error) {
 	if err != nil {
 		return "", errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	req := httplib.Get(nil, fmt.Sprintf("%s%s?%s", MediaUri, m.Vid, v.Encode()))
+	req := httplib.Get(fmt.Sprintf("%s%s?%s", MediaUri, m.Vid, v.Encode()))
 	body, err := req.Bytes()
 	if err != nil {
 		return "", errors.Wrap(err, "httplib.Get.Bytes")

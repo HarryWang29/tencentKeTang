@@ -117,7 +117,7 @@ func (i *Items) Get() (resp *ItemsResp, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	req := httplib.Get(nil, fmt.Sprintf("%s%s", ItemsUri, v.Encode()))
+	req := httplib.Get(fmt.Sprintf("%s%s", ItemsUri, v.Encode()))
 	req.Header("referer", "https://ke.qq.com/webcourse/index.html")
 	body, err := req.Bytes()
 	if err != nil {

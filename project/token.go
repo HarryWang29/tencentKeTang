@@ -35,7 +35,7 @@ func (t *Token) Get() (ret *TokenResult, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	req := httplib.Get(nil, fmt.Sprintf("%s%s", TokenUri, v.Encode()))
+	req := httplib.Get(fmt.Sprintf("%s%s", TokenUri, v.Encode()))
 	req.Header("referer", "https://ke.qq.com/webcourse/index.html")
 	req.Header("cookie", t.Cookie)
 	body, err := req.Bytes()

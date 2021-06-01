@@ -26,7 +26,7 @@
 //	if err != nil {
 //		t.Fatal(err)
 //	}
-//	logrus.Println(str)
+//	defaultLogger.Println(str)
 //
 //  more docs http://beego.me/docs/module/httplib.md
 package httplib
@@ -34,12 +34,10 @@ package httplib
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -81,11 +79,11 @@ func SetDefaultSetting(setting BeegoHTTPSettings) {
 }
 
 // NewBeegoRequest return *BeegoHttpRequest with specific method
-func NewBeegoRequest(ctx context.Context, rawurl, method string) *BeegoHTTPRequest {
+func NewBeegoRequest(rawurl, method string) *BeegoHTTPRequest {
 	var resp http.Response
 	u, err := url.Parse(rawurl)
 	if err != nil {
-		logrus.Errorf("Httplib:", err)
+		defaultLogger.Errorf("Httplib:", err)
 	}
 	req := http.Request{
 		URL:        u,
@@ -96,7 +94,6 @@ func NewBeegoRequest(ctx context.Context, rawurl, method string) *BeegoHTTPReque
 		ProtoMinor: 1,
 	}
 	return &BeegoHTTPRequest{
-		ctx:     ctx,
 		url:     rawurl,
 		req:     &req,
 		params:  map[string][]string{},
@@ -107,28 +104,28 @@ func NewBeegoRequest(ctx context.Context, rawurl, method string) *BeegoHTTPReque
 }
 
 // Get returns *BeegoHttpRequest with GET method.
-func Get(ctx context.Context, url string) *BeegoHTTPRequest {
-	return NewBeegoRequest(ctx, url, "GET")
+func Get(url string) *BeegoHTTPRequest {
+	return NewBeegoRequest(url, "GET")
 }
 
 // Post returns *BeegoHttpRequest with POST method.
-func Post(ctx context.Context, url string) *BeegoHTTPRequest {
-	return NewBeegoRequest(ctx, url, "POST")
+func Post(url string) *BeegoHTTPRequest {
+	return NewBeegoRequest(url, "POST")
 }
 
 // Put returns *BeegoHttpRequest with PUT method.
-func Put(ctx context.Context, url string) *BeegoHTTPRequest {
-	return NewBeegoRequest(ctx, url, "PUT")
+func Put(url string) *BeegoHTTPRequest {
+	return NewBeegoRequest(url, "PUT")
 }
 
 // Delete returns *BeegoHttpRequest DELETE method.
-func Delete(ctx context.Context, url string) *BeegoHTTPRequest {
-	return NewBeegoRequest(ctx, url, "DELETE")
+func Delete(url string) *BeegoHTTPRequest {
+	return NewBeegoRequest(url, "DELETE")
 }
 
 // Head returns *BeegoHttpRequest with HEAD method.
-func Head(ctx context.Context, url string) *BeegoHTTPRequest {
-	return NewBeegoRequest(ctx, url, "HEAD")
+func Head(url string) *BeegoHTTPRequest {
+	return NewBeegoRequest(url, "HEAD")
 }
 
 // BeegoHTTPSettings is the http.Client setting
@@ -149,7 +146,6 @@ type BeegoHTTPSettings struct {
 
 // BeegoHTTPRequest provides more useful methods for requesting one url than http.Request.
 type BeegoHTTPRequest struct {
-	ctx     context.Context
 	url     string
 	req     *http.Request
 	params  map[string][]string
@@ -323,12 +319,12 @@ func (b *BeegoHTTPRequest) Body(data interface{}) *BeegoHTTPRequest {
 		bf := bytes.NewBufferString(t)
 		b.req.Body = ioutil.NopCloser(bf)
 		b.req.ContentLength = int64(len(t))
-		logrus.WithContext(b.ctx).Infof("url:%s, method:%s, reqBody:%s", b.url, b.req.Method, string(t))
+		defaultLogger.Infof("url:%s, method:%s, reqBody:%s", b.url, b.req.Method, string(t))
 	case []byte:
 		bf := bytes.NewBuffer(t)
 		b.req.Body = ioutil.NopCloser(bf)
 		b.req.ContentLength = int64(len(t))
-		logrus.WithContext(b.ctx).Infof("url:%s, method:%s, reqBody:%s", b.url, b.req.Method, string(t))
+		defaultLogger.Infof("url:%s, method:%s, reqBody:%s", b.url, b.req.Method, string(t))
 	case *bytes.Buffer:
 		b.req.ContentLength = int64(t.Len())
 		buf := bytes.NewBuffer(t.Bytes())
@@ -387,17 +383,17 @@ func (b *BeegoHTTPRequest) buildURL(paramBody string) {
 				for formname, filename := range b.files {
 					fileWriter, err := bodyWriter.CreateFormFile(formname, filename)
 					if err != nil {
-						logrus.Errorf("Httplib:", err)
+						defaultLogger.Errorf("Httplib:", err)
 					}
 					fh, err := os.Open(filename)
 					if err != nil {
-						logrus.Errorf("Httplib:", err)
+						defaultLogger.Errorf("Httplib:", err)
 					}
 					//iocopy
 					_, err = io.Copy(fileWriter, fh)
 					fh.Close()
 					if err != nil {
-						logrus.Errorf("Httplib:", err)
+						defaultLogger.Errorf("Httplib:", err)
 					}
 				}
 				for k, v := range b.params {
@@ -507,7 +503,7 @@ func (b *BeegoHTTPRequest) DoRequest() (resp *http.Response, err error) {
 	if b.setting.ShowDebug {
 		dump, err := httputil.DumpRequest(b.req, b.setting.DumpBody)
 		if err != nil {
-			logrus.Errorf(err.Error())
+			defaultLogger.Errorf(err.Error())
 		}
 		b.dump = dump
 	}
@@ -516,7 +512,7 @@ func (b *BeegoHTTPRequest) DoRequest() (resp *http.Response, err error) {
 	// retries equal to -1, it will run forever until success
 	// retries is setted, it will retries fixed times.
 	for i := 0; b.setting.Retries == -1 || i <= b.setting.Retries; i++ {
-		logrus.WithContext(b.ctx).Infof("url:%s, method:%s, header:%+v, reqBody:%s", b.req.URL, b.req.Method, b.req.Header, string(b.dump))
+		defaultLogger.Infof("url:%s, method:%s, header:%+v, reqBody:%s", b.req.URL, b.req.Method, b.req.Header, string(b.dump))
 		resp, err = client.Do(b.req)
 		if err == nil {
 			b.retries = i
@@ -564,9 +560,9 @@ func (b *BeegoHTTPRequest) Bytes() ([]byte, error) {
 	if b.setting.ShowDebug {
 		summary := fmt.Sprintf("Summary: startAt: %s, endAt: %s, cost: %dms",
 			b.startAt.Format(time.StampMicro), b.endAt.Format(time.StampMicro), int(b.endAt.Sub(b.startAt)/time.Millisecond))
-		logrus.WithContext(b.ctx).Info("\n" + string(b.dump) + "\n\n" + string(b.body) + "\n\n" + summary + "\n")
+		defaultLogger.Info("\n" + string(b.dump) + "\n\n" + string(b.body) + "\n\n" + summary + "\n")
 	}
-	logrus.WithContext(b.ctx).Infof("url:%s, method:%s, respBody:%s", b.url, b.req.Method, string(b.body))
+	defaultLogger.Infof("url:%s, method:%s, respBody:%s", b.url, b.req.Method, string(b.body))
 	return b.body, err
 }
 

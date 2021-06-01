@@ -12,9 +12,14 @@ type HttpConfig struct {
 	T      float32 `yaml:"t"`
 }
 
+type AppConfig struct {
+	Debug bool `yaml:"debug"`
+}
+
 type Config struct {
 	Ffmpeg ffmpeg.Config `yaml:"ffmpeg"`
 	Http   HttpConfig    `yaml:"http"`
+	App    AppConfig     `yaml:"app"`
 }
 
 func Load(path string) *Config {
