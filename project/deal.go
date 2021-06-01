@@ -26,6 +26,7 @@ func (p *Project) Do(taskUrl string) error {
 	}
 	//todo 整理目录，用户可自动选择下载目标
 	//目前将目录所有文件遍历
+	var done int64
 	for _, term := range itemsResp.Result.Terms {
 		for _, chapter := range term.ChapterInfo {
 			for _, sub := range chapter.SubInfo {
@@ -57,11 +58,12 @@ func (p *Project) Do(taskUrl string) error {
 						continue
 					}
 					//下载视频，由于m3u8转mp4主要消耗的是cpu/gpu资源，于是此处不考虑开启并发
-					err = ffmpeg.New(&p.c.Ffmpeg).Do(vodUrl, info.Video.Name)
+					err = ffmpeg.New(&p.c.Ffmpeg).Do(vodUrl, info.Video.Name, done)
 					if err != nil {
 						log.Printf("save mp4 err:%s, fileID:%s", err, info.Video.Vid)
 						continue
 					}
+					done++
 				}
 
 			}

@@ -3,8 +3,18 @@ package ffmpeg
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
+	"log"
+	"math/rand"
+	"net"
 	"os"
 	"os/exec"
+	"path"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Config struct {
@@ -21,7 +31,7 @@ func New(c *Config) *Ffmpeg {
 	return &Ffmpeg{c: c}
 }
 
-func (f *Ffmpeg) Do(vodUrl, name string) error {
+func (f *Ffmpeg) Do(vodUrl, name string, done int64) error {
 	//检查文件是否存在
 	savePath := f.c.SavePath + "/" + name
 	err := os.MkdirAll(f.c.SavePath, os.ModePerm)
@@ -45,10 +55,66 @@ func (f *Ffmpeg) Do(vodUrl, name string) error {
 	} else if !os.IsNotExist(err) {
 		return errors.Wrap(err, "os.Stat")
 	}
-	cmd := exec.Command("sh", "-c", fmt.Sprintf(`ffmpeg -i "%s" -c:v h264_videotoolbox "%s"`, vodUrl, savePath))
-	_, err = cmd.Output()
+
+	a, err := ffmpeg.Probe(vodUrl)
 	if err != nil {
-		return errors.Wrap(err, "exec.Command save")
+		panic(err)
+	}
+	totalDuration := gjson.Get(a, "format.duration").Float()
+
+	err = ffmpeg.Input(vodUrl).
+		Output(savePath, ffmpeg.KwArgs{"c:v": "h264_videotoolbox"}).
+		GlobalArgs("-progress", "unix://"+f.TempSock(totalDuration, done)).
+		OverWriteOutput().
+		Run()
+	if err != nil {
+		panic(err)
 	}
 	return nil
+}
+
+func (f *Ffmpeg) TempSock(totalDuration float64, done int64) string {
+	rand.Seed(time.Now().Unix())
+	sockFileName := path.Join(os.TempDir(), fmt.Sprintf("%d_sock", rand.Int()))
+	l, err := net.Listen("unix", sockFileName)
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		re := regexp.MustCompile(`out_time_ms=(\d+)`)
+		reFps := regexp.MustCompile(`fps=(\d+)`)
+		fd, err := l.Accept()
+		if err != nil {
+			log.Fatal("accept error:", err)
+		}
+		buf := make([]byte, 16)
+		data := ""
+		progress := ""
+		for {
+			_, err := fd.Read(buf)
+			if err != nil {
+				return
+			}
+			data += string(buf)
+			a := re.FindAllStringSubmatch(data, -1)
+			cp := ""
+			fps := reFps.FindAllStringSubmatch(data, -1)
+			if len(a) > 0 && len(a[len(a)-1]) > 0 {
+				c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
+				cp = fmt.Sprintf("%.0f", float64(c)/totalDuration/1000000*100)
+			}
+			if strings.Contains(data, "progress=end") {
+				cp = "done"
+			}
+			if cp != progress {
+				progress = cp
+				lastFps := fps[len(fps)-1]
+				log.Printf("done:%d, progress: %s%%, fps: %s", done, progress, lastFps[len(lastFps)-1])
+				fps = [][]string{}
+			}
+		}
+	}()
+
+	return sockFileName
 }
