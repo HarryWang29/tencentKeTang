@@ -62,7 +62,6 @@ func (p *Project) Do(taskUrl string) error {
 						log.Printf("save mp4 err:%s, fileID:%s", err, info.Video.Vid)
 						continue
 					}
-					return nil
 				}
 
 			}
