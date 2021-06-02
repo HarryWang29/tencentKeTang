@@ -46,11 +46,14 @@ func (p *Project) Do(taskUrl string) error {
 					}
 					//获取视频信息
 					media := MediaInfo{
-						Sign:  tokenRet.Sign,
-						T:     tokenRet.T,
-						Exper: 0,
-						Us:    tokenRet.Us,
-						Vid:   info.Video.Vid,
+						Sign:   tokenRet.Sign,
+						T:      tokenRet.T,
+						Exper:  0,
+						Us:     tokenRet.Us,
+						Vid:    info.Video.Vid,
+						Cookie: p.c.Http.Cookie,
+						CID:    sub.Cid,
+						TermID: p.TermID,
 					}
 					vodUrl, err := media.Get()
 					if err != nil {

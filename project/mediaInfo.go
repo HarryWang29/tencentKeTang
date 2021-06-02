@@ -2,6 +2,7 @@ package project
 
 import (
 	"crawler/tencentKeTang/internal/httplib"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/iris-contrib/schema"
@@ -11,11 +12,14 @@ import (
 )
 
 type MediaInfo struct {
-	Sign  string `url:"sign"`
-	T     string `url:"t"`
-	Exper int    `url:"exper"`
-	Us    string `url:"us"`
-	Vid   string `url:"-"`
+	Sign   string `url:"sign"`
+	T      string `url:"t"`
+	Exper  int    `url:"exper"`
+	Us     string `url:"us"`
+	Vid    string `url:"-"`
+	Cookie string `url:"-"`
+	CID    int    `url:"-"`
+	TermID string `url:"-"`
 }
 
 type MediaInfoResp struct {
@@ -107,6 +111,31 @@ func (m *MediaInfo) Get() (vodUrl string, err error) {
 	}
 	vodUrl = resp.VideoInfo.TranscodeList[len(resp.VideoInfo.TranscodeList)-1].URL
 	i := strings.LastIndex(vodUrl, "/")
-	vodUrl = vodUrl[:i+1] + "voddrm.token.dWluPTEwNjEyNjUwNjI7c2tleT1AZktsQkN6RGFGO3Bza2V5PVkqdXF4MDZ5cUtwWVN0YzNsM2R2WEFrVlp1QjJ0UkNtLTVEem5IVlp1VWtfO3Bsc2tleT0wMDA0MDAwMGVhMTk4YzIwYWM2MjYwNjllMmYxMmM2YTNiMzFjMTIyZTkyNWFjM2RmNjQ5YjFkYzM5ODM1YTBkOTkyZjZiNzVjYTBkYjg4YmFmOTBlNjA2O2V4dD07dWlkX3R5cGU9MDt1aWRfb3JpZ2luX3VpZF90eXBlPTA7Y2lkPTMxMzI4MTU7dGVybV9pZD0xMDMyNTYxOTQ7dm9kX3R5cGU9MA==." + vodUrl[i+1:]
+	vodUrl = vodUrl[:i+1] + "voddrm.token." + m.getMediaToken() + "." + vodUrl[i+1:]
 	return vodUrl, nil
+}
+
+func (m *MediaInfo) getMediaToken() string {
+	cm := m.cookie2Map()
+	origin := fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;uid_type=%s;uid_origin_uid_type=%s;cid=%d;term_id=%s;vod_type=0",
+		cm["uin"],
+		cm["skey"],
+		cm["p_skey"],
+		cm["p_lskey"],
+		cm["uid_type"],
+		cm["uid_origin_uid_type"],
+		m.CID,
+		m.TermID,
+	)
+	return base64.StdEncoding.EncodeToString([]byte(origin))
+}
+
+func (m *MediaInfo) cookie2Map() map[string]string {
+	list := strings.Split(m.Cookie, "; ")
+	cm := make(map[string]string)
+	for _, s := range list {
+		i := strings.Index(s, "=")
+		cm[s[:i]] = s[i+1:]
+	}
+	return cm
 }
