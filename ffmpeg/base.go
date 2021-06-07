@@ -47,13 +47,6 @@ func New(c *Config) *Ffmpeg {
 	if c.Params != "" {
 		f.ffmpegParams = strings.Split(c.Params, " ")
 	}
-	l, err := net.Listen("tcp", ":8829")
-	if err != nil {
-		panic(err)
-	}
-	go f.progress(l)
-	f.address = "127.0.0.1:8829"
-
 	return f
 }
 
@@ -89,6 +82,13 @@ func (f *Ffmpeg) Do(vodUrl, name string) error {
 	} else if !os.IsNotExist(err) {
 		return errors.Wrap(err, "os.Stat")
 	}
+
+	l, err := net.Listen("tcp", ":8829")
+	if err != nil {
+		panic(err)
+	}
+	go f.progress(l)
+	f.address = "127.0.0.1:8829"
 
 	err = f.mergeAndDownload(vodUrl, savePath, f.address)
 	if err != nil {
