@@ -121,15 +121,30 @@ func (a *api) downLoad(vodUrl, name string) (err error) {
 }
 
 func (a *api) getMediaToken(cID, termID string) string {
-	origin := fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;uid_type=%s;uid_origin_uid_type=%s;cid=%s;term_id=%s;vod_type=0",
-		a.cookie["uin"],
-		a.cookie["skey"],
-		a.cookie["p_skey"],
-		a.cookie["p_lskey"],
-		a.cookie["uid_type"],
-		a.cookie["uid_origin_uid_type"],
-		cID,
-		termID,
-	)
+	var origin string
+	switch a.cookie["uid_type"] {
+	//qq扫码与qq帐号登录都是0
+	case "0":
+		origin = fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;uid_type=%s;uid_origin_uid_type=%s;cid=%s;term_id=%s;vod_type=0",
+			a.cookie["uin"],
+			a.cookie["skey"],
+			a.cookie["p_skey"],
+			a.cookie["p_lskey"],
+			a.cookie["uid_type"],
+			a.cookie["uid_origin_uid_type"],
+			cID,
+			termID,
+		)
+	//微信扫码登录
+	case "2":
+		origin = fmt.Sprintf("uin=%s;skey=;pskey=;plskey=;ext=%s;uid_appid=%s;uid_type=2;uid_origin_uid_type=%s;cid=%s;term_id=%s;vod_type=0",
+			a.cookie["uin"],
+			a.cookie["uid_a2"],
+			a.cookie["uid_appid"],
+			a.cookie["uid_origin_uid_type"],
+			cID,
+			termID,
+		)
+	}
 	return base64.StdEncoding.EncodeToString([]byte(origin))
 }

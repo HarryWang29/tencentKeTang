@@ -1,5 +1,5 @@
 ffmpeg:
-  #ffmpeg安装路径
+  #ffmpeg安装目录（目录地址即可，ffmpeg与ffprobe都会通过此目录）
   path: ''
   #ffmpeg使用参数，我电脑是mbp+a卡，只能使用intel内置gpu加速，不过也比纯cpu操作快很多了
   params: ''
