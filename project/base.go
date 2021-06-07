@@ -1,42 +1,55 @@
 package project
 
 import (
-	"crawler/tencentKeTang/config"
-	"github.com/iris-contrib/schema"
-	"github.com/pkg/errors"
-	"net/url"
+	"crawler/tencentKeTang/ffmpeg"
+	"crawler/tencentKeTang/keTang"
+	"github.com/tidwall/gjson"
+	"strconv"
 	"strings"
 )
 
-const (
-	ItemsUri = "https://ke.qq.com/cgi-bin/course/get_terms_detail?"
-	TokenUri = "https://ke.qq.com/cgi-bin/qcloud/get_token?"
-	MediaUri = "https://playvideo.qcloud.com/getplayinfo/v2/1258712167/"
-)
-
-type Project struct {
-	c      *config.Config
-	CID    string `url:"course_id"`
-	TaID   string `url:"taid"`
-	TermID string `url:"term_id"`
-	Type   string `url:"type"`
-	VID    string `url:"vid"`
+type Api interface {
+	GetCatalogue(cid string, tid int64) (list []*Catalogue, err error)
+	DownLoadByIndex(i int64) (err error)
+	DownLoadByCID(cid string) (err error)
 }
 
-func New(c *config.Config) *Project {
-	return &Project{c: c}
+type api struct {
+	keTang     keTang.Api
+	ffmpeg     *ffmpeg.Ffmpeg
+	catalogues []*Catalogue
+	cookie     map[string]string
 }
 
-func (p *Project) LoadTaskUrl(taskUrl string) error {
-	taskUrl = strings.Replace(taskUrl, "#", "?", 1)
-	u, err := url.Parse(taskUrl)
-	if err != nil {
-		return errors.Wrap(err, "url.Parse")
+func New(kt keTang.Api, f *ffmpeg.Ffmpeg, cookie string) Api {
+	a := &api{
+		keTang:     kt,
+		ffmpeg:     f,
+		catalogues: make([]*Catalogue, 0),
 	}
-	values := u.Query()
-	err = schema.DecodeQuery(values, p)
-	if err != nil {
-		return errors.Wrap(err, "schema.DecodeQuery")
+	a.cookie2Map(cookie)
+	return a
+}
+
+func (a *api) cookie2Map(cookie string) {
+	list := strings.Split(cookie, "; ")
+	a.cookie = make(map[string]string)
+	for _, s := range list {
+		i := strings.Index(s, "=")
+		a.cookie[s[:i]] = s[i+1:]
 	}
-	return nil
+}
+
+func (a *api) string2list(s string) []int64 {
+	s = strings.ReplaceAll(s, "&quot;", "\"")
+	list := make([]int64, 0)
+	if id, err := strconv.ParseInt(s, 10, 64); err == nil {
+		list = append(list, id)
+	} else {
+		arr := gjson.Get(s, "#()#").Array()
+		for _, result := range arr {
+			list = append(list, result.Int())
+		}
+	}
+	return list
 }

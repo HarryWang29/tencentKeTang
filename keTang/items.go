@@ -1,8 +1,6 @@
-package project
+package keTang
 
 import (
-	"crawler/tencentKeTang/internal/httplib"
-	"encoding/json"
 	"fmt"
 	"github.com/iris-contrib/schema"
 	"github.com/pkg/errors"
@@ -65,18 +63,18 @@ type ItemsResp struct {
 							State    int    `json:"state"`
 							Aid      int    `json:"aid"`
 						} `json:"video"`
-						Type        int     `json:"type"`
-						Bgtime      int     `json:"bgtime"`
-						ExprFlag    int     `json:"expr_flag"`
-						TeList      []int64 `json:"te_list"`
-						Name        string  `json:"name"`
-						TaskBitFlag int     `json:"task_bit_flag"`
-						ResidList   string  `json:"resid_list"`
-						ExprRange   int     `json:"expr_range"`
-						AppendFlag  int     `json:"append_flag"`
-						Aid         int     `json:"aid"`
-						Taid        string  `json:"taid"`
-						Cid         int     `json:"cid"`
+						Type        int         `json:"type"`
+						Bgtime      int         `json:"bgtime"`
+						ExprFlag    int         `json:"expr_flag"`
+						TeList      []int64     `json:"te_list"`
+						Name        string      `json:"name"`
+						TaskBitFlag int         `json:"task_bit_flag"`
+						ResidList   interface{} `json:"resid_list"`
+						ExprRange   int         `json:"expr_range"`
+						AppendFlag  int         `json:"append_flag"`
+						Aid         int         `json:"aid"`
+						Taid        string      `json:"taid"`
+						Cid         int         `json:"cid"`
 					} `json:"task_info"`
 					Bgtime int `json:"bgtime"`
 					Cid    int `json:"cid"`
@@ -111,22 +109,22 @@ type ItemsResp struct {
 	Retcode int `json:"retcode"`
 }
 
-func (i *Items) Get() (resp *ItemsResp, err error) {
+func (a *api) Get(i *Items) (resp *ItemsResp, err error) {
+	if i == nil {
+		return nil, errors.New("param is nil")
+	}
+	i.BKN = a.c.BKN
+	i.T = a.c.T
 	v := url.Values{}
 	err = schema.NewEncoder().Encode(i, v)
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	req := httplib.Get(fmt.Sprintf("%s%s", ItemsUri, v.Encode()))
-	req.Header("referer", "https://ke.qq.com/webcourse/index.html")
-	body, err := req.Bytes()
+	err = a.get(fmt.Sprintf("%s%s", ItemsUri, v.Encode()), &resp,
+		"referer", "https://ke.qq.com/webcourse/index.html")
 	if err != nil {
-		return nil, errors.Wrap(err, "httplib.Get.Bytes")
+		return nil, errors.Wrap(err, "a.get")
 	}
 
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "json.Unmarshal")
-	}
 	return resp, nil
 }

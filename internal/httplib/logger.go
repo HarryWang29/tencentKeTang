@@ -24,14 +24,14 @@ func (emptyLogger) Infof(format string, args ...interface{}) {
 	if !debug {
 		return
 	}
-	fmt.Printf(format, args...)
+	fmt.Printf(format+"\n", args...)
 }
 
 func (emptyLogger) Errorf(format string, args ...interface{}) {
 	if !debug {
 		return
 	}
-	fmt.Printf(format, args...)
+	fmt.Printf(format+"\n", args...)
 }
 
 var defaultLogger Logger = emptyLogger{}

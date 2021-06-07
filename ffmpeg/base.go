@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"log"
 	"math/rand"
 	"net"
@@ -12,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -24,23 +24,48 @@ type Config struct {
 }
 
 type Ffmpeg struct {
-	c *Config
+	c            *Config
+	ffmpegExec   string
+	ffmpegParams []string
+	ffprobeExec  string
 }
 
 func New(c *Config) *Ffmpeg {
-	return &Ffmpeg{c: c}
+	f := &Ffmpeg{
+		c: c,
+	}
+	if f.ffmpegExec != "" {
+		f.ffmpegExec = c.Path + "/ffmpeg"
+		f.ffprobeExec = c.Path + "/ffprobe"
+	} else {
+		f.ffmpegExec = "ffmpeg"
+		f.ffprobeExec = "ffprobe"
+	}
+	if runtime.GOOS == "windows" {
+		f.ffmpegExec += ".exe"
+		f.ffprobeExec += ".exe"
+	}
+	if c.Params != "" {
+		f.ffmpegParams = strings.Split(c.Params, " ")
+	}
+	return f
 }
 
-func (f *Ffmpeg) Do(vodUrl, name string, done int64) error {
+func (f *Ffmpeg) Do(vodUrl, name string) error {
+	//获取目标视频帧数
+	ret, err := f.probe(vodUrl)
+	if err != nil {
+		return errors.Wrap(err, "probe")
+	}
+	remoteDuration := gjson.Get(ret, "format.duration").Float()
 	//检查文件是否存在
-	savePath := f.c.SavePath + "/" + name
-	err := os.MkdirAll(f.c.SavePath, os.ModePerm)
+	savePath := f.c.SavePath + "/" + name + ".mp4"
+	err = os.MkdirAll(f.c.SavePath, os.ModePerm)
 	if err != nil {
 		return errors.Wrapf(err, "os.MkdirAll path:%s", f.c.SavePath)
 	}
 	_, err = os.Stat(savePath)
 	if err == nil {
-		//文件存在，检查本地与目标视频时间差值是否小于1s
 		//获取本地文件时常
 		localDuration, err := exec.Command("sh",
 			"-c",
@@ -56,24 +81,14 @@ func (f *Ffmpeg) Do(vodUrl, name string, done int64) error {
 		return errors.Wrap(err, "os.Stat")
 	}
 
-	a, err := ffmpeg.Probe(vodUrl)
+	err = f.mergeAndDownload(vodUrl, savePath, f.TempSock(remoteDuration))
 	if err != nil {
-		panic(err)
-	}
-	totalDuration := gjson.Get(a, "format.duration").Float()
-
-	err = ffmpeg.Input(vodUrl).
-		Output(savePath, ffmpeg.KwArgs{"c:v": "h264_videotoolbox"}).
-		GlobalArgs("-progress", "unix://"+f.TempSock(totalDuration, done)).
-		OverWriteOutput().
-		Run()
-	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "mergeAndDownload")
 	}
 	return nil
 }
 
-func (f *Ffmpeg) TempSock(totalDuration float64, done int64) string {
+func (f *Ffmpeg) TempSock(totalDuration float64) string {
 	rand.Seed(time.Now().Unix())
 	sockFileName := path.Join(os.TempDir(), fmt.Sprintf("%d_sock", rand.Int()))
 	l, err := net.Listen("unix", sockFileName)
@@ -110,7 +125,7 @@ func (f *Ffmpeg) TempSock(totalDuration float64, done int64) string {
 			if cp != progress {
 				progress = cp
 				lastFps := fps[len(fps)-1]
-				log.Printf("done:%d, progress: %s%%, fps: %s", done, progress, lastFps[len(lastFps)-1])
+				log.Printf("progress: %s%%, fps: %s", progress, lastFps[len(lastFps)-1])
 				fps = [][]string{}
 			}
 		}

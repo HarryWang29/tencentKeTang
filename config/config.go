@@ -2,15 +2,10 @@ package config
 
 import (
 	"crawler/tencentKeTang/ffmpeg"
+	"crawler/tencentKeTang/keTang"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
-
-type HttpConfig struct {
-	Cookie string  `yaml:"cookie"`
-	BKN    int64   `yaml:"bkn"`
-	T      float32 `yaml:"t"`
-}
 
 type AppConfig struct {
 	Debug bool `yaml:"debug"`
@@ -18,8 +13,10 @@ type AppConfig struct {
 
 type Config struct {
 	Ffmpeg ffmpeg.Config `yaml:"ffmpeg"`
-	Http   HttpConfig    `yaml:"http"`
+	Http   keTang.Config `yaml:"http"`
 	App    AppConfig     `yaml:"app"`
+
+	KeTang keTang.Api
 }
 
 func Load(path string) *Config {
@@ -33,7 +30,7 @@ func Load(path string) *Config {
 		panic(err)
 	}
 	if c.Ffmpeg.SavePath == "" {
-		c.Ffmpeg.SavePath = "./"
+		c.Ffmpeg.SavePath = "./download"
 	}
 	return c
 }

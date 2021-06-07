@@ -1,8 +1,6 @@
-package project
+package keTang
 
 import (
-	"crawler/tencentKeTang/internal/httplib"
-	"encoding/json"
 	"fmt"
 	"github.com/iris-contrib/schema"
 	"github.com/pkg/errors"
@@ -29,25 +27,23 @@ type TokenResp struct {
 	Retcode int          `json:"retcode"`
 }
 
-func (t *Token) Get() (ret *TokenResult, err error) {
+func (a *api) Token(t *Token) (ret *TokenResult, err error) {
+	t.BKN = a.c.BKN
+	t.T = a.c.T
+	t.Cookie = a.c.Cookie
 	v := url.Values{}
 	err = schema.NewEncoder().Encode(t, v)
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	req := httplib.Get(fmt.Sprintf("%s%s", TokenUri, v.Encode()))
-	req.Header("referer", "https://ke.qq.com/webcourse/index.html")
-	req.Header("cookie", t.Cookie)
-	body, err := req.Bytes()
+	resp := &TokenResp{}
+	err = a.get(fmt.Sprintf("%s%s", TokenUri, v.Encode()), &resp,
+		"referer", "https://ke.qq.com/webcourse/index.html",
+		"cookie", t.Cookie)
 	if err != nil {
-		return nil, errors.Wrap(err, "httplib.Get.Bytes")
+		return nil, errors.Wrap(err, "a.get")
 	}
 
-	resp := &TokenResp{}
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "json.Unmarshal")
-	}
 	if resp.Result == nil {
 		return nil, errors.New("tokenResp.Result is empty")
 	}

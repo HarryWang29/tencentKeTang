@@ -1,14 +1,10 @@
-package project
+package keTang
 
 import (
-	"crawler/tencentKeTang/internal/httplib"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/iris-contrib/schema"
 	"github.com/pkg/errors"
 	"net/url"
-	"strings"
 )
 
 type MediaInfo struct {
@@ -16,10 +12,8 @@ type MediaInfo struct {
 	T      string `url:"t"`
 	Exper  int    `url:"exper"`
 	Us     string `url:"us"`
-	Vid    string `url:"-"`
 	Cookie string `url:"-"`
-	CID    int    `url:"-"`
-	TermID string `url:"-"`
+	Vid    string `url:"-"`
 }
 
 type MediaInfoResp struct {
@@ -92,50 +86,16 @@ type MediaInfoResp struct {
 	} `json:"videoInfo"`
 }
 
-func (m *MediaInfo) Get() (vodUrl string, err error) {
+func (a *api) MediaInfo(m *MediaInfo) (info *MediaInfoResp, err error) {
+	m.Cookie = a.c.Cookie
 	v := url.Values{}
 	err = schema.NewEncoder().Encode(m, v)
 	if err != nil {
-		return "", errors.Wrap(err, "schema.NewEncoder().Encode")
+		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	req := httplib.Get(fmt.Sprintf("%s%s?%s", MediaUri, m.Vid, v.Encode()))
-	body, err := req.Bytes()
+	err = a.get(fmt.Sprintf("%s%s?%s", MediaUri, m.Vid, v.Encode()), &info)
 	if err != nil {
-		return "", errors.Wrap(err, "httplib.Get.Bytes")
+		return nil, errors.Wrap(err, "get")
 	}
-
-	resp := &MediaInfoResp{}
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		return "", errors.Wrap(err, "json.Unmarshal")
-	}
-	vodUrl = resp.VideoInfo.TranscodeList[len(resp.VideoInfo.TranscodeList)-1].URL
-	i := strings.LastIndex(vodUrl, "/")
-	vodUrl = vodUrl[:i+1] + "voddrm.token." + m.getMediaToken() + "." + vodUrl[i+1:]
-	return vodUrl, nil
-}
-
-func (m *MediaInfo) getMediaToken() string {
-	cm := m.cookie2Map()
-	origin := fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;uid_type=%s;uid_origin_uid_type=%s;cid=%d;term_id=%s;vod_type=0",
-		cm["uin"],
-		cm["skey"],
-		cm["p_skey"],
-		cm["p_lskey"],
-		cm["uid_type"],
-		cm["uid_origin_uid_type"],
-		m.CID,
-		m.TermID,
-	)
-	return base64.StdEncoding.EncodeToString([]byte(origin))
-}
-
-func (m *MediaInfo) cookie2Map() map[string]string {
-	list := strings.Split(m.Cookie, "; ")
-	cm := make(map[string]string)
-	for _, s := range list {
-		i := strings.Index(s, "=")
-		cm[s[:i]] = s[i+1:]
-	}
-	return cm
+	return info, nil
 }
