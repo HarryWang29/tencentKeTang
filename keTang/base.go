@@ -52,7 +52,7 @@ func (a *api) get(url string, resp interface{}, headers ...string) error {
 
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
-		return errors.Wrap(err, "json.Unmarshal")
+		return errors.Wrapf(err, "json.Unmarshal,resp:%s", string(body))
 	}
 	return nil
 }
