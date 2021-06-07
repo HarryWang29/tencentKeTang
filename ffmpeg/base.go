@@ -30,7 +30,7 @@ type Ffmpeg struct {
 	remoteDuration float64
 }
 
-func New(c *Config) *Ffmpeg {
+func New(c *Config) (*Ffmpeg, error) {
 	f := &Ffmpeg{
 		c: c,
 	}
@@ -48,7 +48,17 @@ func New(c *Config) *Ffmpeg {
 	if c.Params != "" {
 		f.ffmpegParams = strings.Split(c.Params, " ")
 	}
-	return f
+	//检查ffmpeg
+	err := f.checkFfmpeg()
+	if err != nil {
+		return nil, errors.Wrap(err, "调用ffmpeg出错，请检查地址")
+	}
+	//检查ffprobe
+	err = f.checkProbe()
+	if err != nil {
+		return nil, errors.Wrap(err, "调用ffprobe出错，请检查地址")
+	}
+	return f, nil
 }
 
 func (f *Ffmpeg) Do(vodUrl, name string) error {

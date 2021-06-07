@@ -21,3 +21,12 @@ func (f *Ffmpeg) mergeAndDownload(vodUrl, name, sockFileName string) error {
 
 	return nil
 }
+
+func (f *Ffmpeg) checkFfmpeg() (err error) {
+	cmd := exec.Command(f.ffmpegExec, "-version")
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrap(err, "exec.Run")
+	}
+	return nil
+}

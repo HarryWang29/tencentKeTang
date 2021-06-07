@@ -19,3 +19,12 @@ func (f *Ffmpeg) probe(vodUrl string) (ret string, err error) {
 	}
 	return buf.String(), nil
 }
+
+func (f *Ffmpeg) checkProbe() (err error) {
+	cmd := exec.Command(f.ffprobeExec, "-version")
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrap(err, "exec.Run")
+	}
+	return nil
+}

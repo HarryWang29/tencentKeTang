@@ -26,8 +26,12 @@ func NewApp() *App {
 	app := &App{
 		Config: Load(configPath),
 	}
+	var err error
 	app.KeTang = keTang.New(&app.Config.Http)
-	app.FFmpeg = ffmpeg.New(&app.Config.Ffmpeg)
+	app.FFmpeg, err = ffmpeg.New(&app.Config.Ffmpeg)
+	if err != nil {
+		panic(err)
+	}
 	app.Project = project.New(app.KeTang, app.FFmpeg, app.Config.Http.Cookie)
 	return app
 }
