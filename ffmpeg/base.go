@@ -3,6 +3,7 @@ package ffmpeg
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/schollz/progressbar/v3"
 	"github.com/tidwall/gjson"
 	"log"
 	"math"
@@ -87,7 +88,7 @@ func (f *Ffmpeg) Do(vodUrl, name string) error {
 	if err != nil {
 		panic(err)
 	}
-	go f.progress(l)
+	go f.progress(l, name)
 	f.address = "127.0.0.1:8829"
 
 	err = f.mergeAndDownload(vodUrl, savePath, f.address)
@@ -97,7 +98,7 @@ func (f *Ffmpeg) Do(vodUrl, name string) error {
 	return nil
 }
 
-func (f *Ffmpeg) progress(l net.Listener) {
+func (f *Ffmpeg) progress(l net.Listener, name string) {
 	re := regexp.MustCompile(`out_time_ms=(\d+)`)
 	reFps := regexp.MustCompile(`fps=(\d+)`)
 	fd, err := l.Accept()
@@ -106,28 +107,51 @@ func (f *Ffmpeg) progress(l net.Listener) {
 	}
 	buf := make([]byte, 16)
 	data := ""
-	progress := ""
+	fpsShow := ""
+	max := int(f.remoteDuration * 1000000)
+	bar := progressbar.NewOptions(max,
+		progressbar.OptionSetWriter(os.Stdout),
+		progressbar.OptionSetWidth(15),
+		progressbar.OptionSetDescription(fmt.Sprintf("downloading %s ...", name)),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "=",
+			SaucerHead:    ">",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}))
 	for {
 		_, err := fd.Read(buf)
 		if err != nil {
 			return
 		}
 		data += string(buf)
-		a := re.FindAllStringSubmatch(data, -1)
-		cp := ""
-		fps := reFps.FindAllStringSubmatch(data, -1)
-		if len(a) > 0 && len(a[len(a)-1]) > 0 {
-			c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
-			cp = fmt.Sprintf("%.0f", float64(c)/f.remoteDuration/1000000*100)
+		datas := strings.Split(data, "\n")
+		for i := 0; i < len(datas)-1; i++ {
+			fps := reFps.FindStringSubmatch(datas[i])
+			if len(fps) > 0 {
+				fpsShow = fps[len(fps)-1]
+			}
+			a := re.FindStringSubmatch(datas[i])
+			if len(a) > 0 {
+				c, err := strconv.Atoi(a[len(a)-1])
+				if err != nil {
+					continue
+				}
+				if c < max {
+					bar.Set(c)
+				} else {
+					bar.Finish()
+				}
+				bar.Describe(fmt.Sprintf("[fps:%s] downloading %s ...", fpsShow, name))
+			}
+			if strings.Contains(datas[i], "progress=end") {
+				fd.Close()
+				l.Close()
+				fmt.Println("")
+				return
+			}
 		}
-		if strings.Contains(data, "progress=end") {
-			cp = "done"
-		}
-		if cp != progress {
-			progress = cp
-			lastFps := fps[len(fps)-1]
-			log.Printf("progress: %s%%, fps: %s", progress, lastFps[len(lastFps)-1])
-			fps = [][]string{}
-		}
+		data = datas[len(datas)-1]
 	}
 }
