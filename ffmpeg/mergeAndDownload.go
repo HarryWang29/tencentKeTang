@@ -7,11 +7,11 @@ import (
 )
 
 func (f *Ffmpeg) mergeAndDownload(vodUrl, name, sockFileName string) error {
-	args := []string{"-i", vodUrl}
+	args := []string{"-i", fmt.Sprintf(`%s`, vodUrl)}
 	if len(f.ffmpegParams) != 0 {
 		args = append(args, f.ffmpegParams...)
 	}
-	args = append(args, "-progress", fmt.Sprintf("unix://%s", sockFileName))
+	args = append(args, "-progress", fmt.Sprintf(`tcp://%s`, sockFileName))
 	args = append(args, name, "-y")
 	cmd := exec.Command(f.ffmpegExec, args...)
 	err := cmd.Run()

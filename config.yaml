@@ -1,13 +1,13 @@
 ffmpeg:
   #ffmpeg安装路径
-  path: ""
+  path: ''
   #ffmpeg使用参数，我电脑是mbp+a卡，只能使用intel内置gpu加速，不过也比纯cpu操作快很多了
-  params: ""
+  params: ''
   #文件下载保存路径
-  save_path: "./tmp/"
+  save_path: './download/'
 http:
   #腾讯课堂cookie
-  cookie: ""
+  cookie: ''
   #此参数不知道怎么来的，先写死。。。
   bkn: 406332881
   #此参数不知道怎么来的，先写死。。。
