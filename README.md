@@ -24,14 +24,16 @@
    ```shell
       help
    ```
-8. 可以通过cid直接下载，也可通过cid+tid列出目录后，进行选择下载
+8. 可以通过cid直接下载，也可通过cid+tid列出目录后，进行选择下载，如下图所示
    ```shell
-      t -c 123  #获取123中所有视频
+      tree -c 123  #获取123中所有视频
       tree -c 123 -t 456 #获取123中的456term
    
       d -c 123  #下载123中所有视频
       d -t 1    #下载tree列目录中的索引
    ```
+   ![image](https://user-images.githubusercontent.com/8288067/121004497-585c6d80-c7c1-11eb-9f3c-c7b51785baf2.png)
+
 
 # TODO List
 - [X] 整理日志
