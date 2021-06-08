@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 	"log"
 	"strings"
 )
@@ -123,8 +124,18 @@ func (a *api) downLoad(vodUrl, name string) (err error) {
 func (a *api) getMediaToken(cID, termID string) string {
 	var origin string
 	switch a.cookie["uid_type"] {
-	//qq扫码与qq帐号登录都是0
+	case "":
+		//发现有没有"uid_type"的情况
+		origin = fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;cid=%s;term_id=%s;vod_type=0",
+			gjson.Get(a.cookie["tdw_data_new_2"], "uin").String(),
+			a.cookie["skey"],
+			a.cookie["p_skey"],
+			a.cookie["p_lskey"],
+			cID,
+			termID,
+		)
 	case "0":
+		//qq扫码与qq帐号登录都是0
 		origin = fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;uid_type=%s;uid_origin_uid_type=%s;cid=%s;term_id=%s;vod_type=0",
 			a.cookie["uin"],
 			a.cookie["skey"],
@@ -135,8 +146,8 @@ func (a *api) getMediaToken(cID, termID string) string {
 			cID,
 			termID,
 		)
-	//微信扫码登录
 	case "2":
+		//微信扫码登录
 		origin = fmt.Sprintf("uin=%s;skey=;pskey=;plskey=;ext=%s;uid_appid=%s;uid_type=2;uid_origin_uid_type=%s;cid=%s;term_id=%s;vod_type=0",
 			a.cookie["uin"],
 			a.cookie["uid_a2"],
