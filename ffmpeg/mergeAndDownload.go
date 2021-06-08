@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
 	"os/exec"
@@ -14,9 +15,11 @@ func (f *Ffmpeg) mergeAndDownload(vodUrl, name, sockFileName string) error {
 	args = append(args, "-progress", fmt.Sprintf(`tcp://%s`, sockFileName))
 	args = append(args, name, "-y")
 	cmd := exec.Command(f.ffmpegExec, args...)
+	buf := bytes.NewBuffer(nil)
+	cmd.Stderr = buf
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrap(err, "exec.Run")
+		return errors.Wrapf(err, "exec.Run err: %s", buf.String())
 	}
 
 	return nil

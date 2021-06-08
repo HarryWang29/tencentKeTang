@@ -12,10 +12,12 @@ func (f *Ffmpeg) probe(vodUrl string) (ret string, err error) {
 	args := append(probeArgs, vodUrl)
 	cmd := exec.Command(f.ffprobeExec, args...)
 	buf := bytes.NewBuffer(nil)
+	errBuf := bytes.NewBuffer(nil)
 	cmd.Stdout = buf
+	cmd.Stderr = errBuf
 	err = cmd.Run()
 	if err != nil {
-		return "", errors.Wrap(err, "exec.Run")
+		return "", errors.Wrapf(err, "exec.Run: %s", errBuf.String())
 	}
 	return buf.String(), nil
 }
