@@ -37,7 +37,7 @@ func (a *api) Token(t *Token) (ret *TokenResult, err error) {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
 	resp := &TokenResp{}
-	err = a.get(fmt.Sprintf("%s%s", TokenUri, v.Encode()), &resp,
+	_, err = a.get(fmt.Sprintf("%s%s", TokenUri, v.Encode()), &resp,
 		"referer", "https://ke.qq.com/webcourse/index.html",
 		"cookie", t.Cookie)
 	if err != nil {

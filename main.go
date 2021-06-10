@@ -5,10 +5,12 @@ import (
 	"crawler/tencentKeTang/internal/httplib"
 	"crawler/tencentKeTang/pcsliner"
 	"crawler/tencentKeTang/pcsliner/args"
+	"crawler/tencentKeTang/project"
 	"fmt"
 	"github.com/peterh/liner"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+	"log"
 	"os"
 	"strconv"
 )
@@ -41,6 +43,9 @@ func main() {
 		var (
 			line = pcsliner.NewLiner()
 		)
+		if myApp.Config.Http.Cookie == "" {
+			log.Println("配置文件中未找到cookie,可输入`login -h`查看登录命令")
+		}
 
 		for {
 			var (
@@ -89,16 +94,49 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		{
-			Name:        "login",
-			Usage:       "登录课堂",
-			Description: ``,
+			Name:  "login",
+			Usage: "登录课堂",
+			Description: `
+		登录腾讯课堂
+		示例：
+		tencentKeTang login 123 456                 #qq帐号密码登录，暂未支持
+		tencentKeTang login -type 1 -user_name=123  #qq帐号密码登录，暂未支持
+		tencentKeTang login -type 2                 #qq扫码登录，暂未支持
+		tencentKeTang login -type 3                 #微信扫码登录
+`,
 			Action: func(context *cli.Context) error {
+				var err error
+				switch context.Int64("type") {
+				case 1:
+					log.Println("帐号密码登录，暂未支持")
+				case 2:
+					log.Println("qq扫码，暂未支持")
+				case 3:
+					myApp.Project.SetCookie("")
+					myApp.KeTang.SetCookie(nil)
+					err = myApp.Project.WxQRLogin()
+					if err == project.ErrExpire {
+						return fmt.Errorf("登录码超时，请重新申请")
+					}
+				default:
+					log.Println("帐号密码登录，暂未支持")
+				}
+				if err != nil {
+					return err
+				}
 				resp, err := myApp.KeTang.Info()
 				if err != nil {
 					return err
 				}
+				log.Printf("登录成功，欢迎%s使用本程序（请自行关闭二维码）", resp.NickName)
 				context.App.Metadata["user_name"] = resp.NickName
 				return nil
+			},
+			Flags: []cli.Flag{
+				&cli.Int64Flag{
+					Name:  "type",
+					Usage: "登录方式",
+				},
 			},
 		},
 		{

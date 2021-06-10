@@ -160,7 +160,7 @@ func (a *api) BasicInfo(cid string) (resp *BasicInfoResp, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	err = a.get(fmt.Sprintf("%s%s", BasicInfoUri, v.Encode()), &resp,
+	_, err = a.get(fmt.Sprintf("%s%s", BasicInfoUri, v.Encode()), &resp,
 		"referer", "https://ke.qq.com/webcourse/index.html",
 		"cookie", a.c.Cookie)
 	if err != nil {

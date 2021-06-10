@@ -13,7 +13,7 @@ type info struct {
 }
 
 type InfoResult struct {
-	UID       int         `json:"uid"`
+	UID       interface{} `json:"uid"`
 	RoleType  int         `json:"role_type"`
 	UIDType   int         `json:"uid_type"`
 	RoleInfo  interface{} `json:"role_info"`
@@ -42,7 +42,7 @@ func (a *api) Info() (result *InfoResult, err error) {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
 	resp := &InfoResp{}
-	err = a.get(fmt.Sprintf("%s%s", InfoUri, v.Encode()), &resp,
+	_, err = a.get(fmt.Sprintf("%s%s", InfoUri, v.Encode()), &resp,
 		"referer", "https://ke.qq.com/webcourse/index.html",
 		"cookie", a.c.Cookie)
 	if err != nil {

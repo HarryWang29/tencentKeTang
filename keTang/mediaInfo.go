@@ -93,7 +93,7 @@ func (a *api) MediaInfo(m *MediaInfo) (info *MediaInfoResp, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	err = a.get(fmt.Sprintf("%s%s?%s", MediaUri, m.Vid, v.Encode()), &info)
+	_, err = a.get(fmt.Sprintf("%s%s?%s", MediaUri, m.Vid, v.Encode()), &info)
 	if err != nil {
 		return nil, errors.Wrap(err, "get")
 	}

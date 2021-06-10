@@ -120,7 +120,7 @@ func (a *api) Get(i *Items) (resp *ItemsResp, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "schema.NewEncoder().Encode")
 	}
-	err = a.get(fmt.Sprintf("%s%s", ItemsUri, v.Encode()), &resp,
+	_, err = a.get(fmt.Sprintf("%s%s", ItemsUri, v.Encode()), &resp,
 		"referer", "https://ke.qq.com/webcourse/index.html")
 	if err != nil {
 		return nil, errors.Wrap(err, "a.get")
