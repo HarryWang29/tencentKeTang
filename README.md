@@ -2,14 +2,14 @@
 哎，腾讯课堂的app太难用了，此工具仅仅只是为了将视频下载到本地，使用第三方播放器使用
 
 # 注意事项
-* 请自行下载安装ffmpeg与ffprobe
+* ~~请自行下载安装ffmpeg与ffprobe~~
 * ffmpeg使用gpu加速，请自行查找资料
 * ~~未测试windows使用情况~~
 
 # 使用帮助
-1. 请自行下载安装ffmpeg与ffprobe
-1. 请确保ffmpeg与ffprobe在同一目录
-2. 将ffmpeg安装目录填写到config.yaml中
+1. ~~请自行下载安装ffmpeg与ffprobe~~
+1. ~~请确保ffmpeg与ffprobe在同一目录~~
+2. ~~将ffmpeg安装目录填写到config.yaml中~~
 3. ffmpeg使用gpu加速相关，请自行查找资料
 4. 确认文件下载路径
 5. 目前已支持微信扫码登录/cookie登录
@@ -35,7 +35,8 @@
       tree -c 123 -t 456 #获取123中的456term
    
       d -c 123  #下载123中所有视频
-      d -t 1    #下载tree列目录中的索引
+      d 1    #下载tree列目录中的索引
+      d 1 3 5    #下载tree列目录中的索引
    ```
    ![image](https://user-images.githubusercontent.com/8288067/121004497-585c6d80-c7c1-11eb-9f3c-c7b51785baf2.png)
 
@@ -46,9 +47,13 @@
 - [X] 显示下载进度
 - [X] 优化进度条
 - [X] 支持微信扫码登录
-- [ ] 打包ffmpeg/ffprobe
+- [X] 从列表中选择多个视频下载
+- [X] 打包ffmpeg/ffprobe(linux没有打包，目前只打包了mac/windows, 
+  mac: ffmpeg version 4.3.1, ffprobe version 4.3.1
+  windows: ffmpeg version 4.4-essentials_build-www.gyan.dev, ffprobe version 4.4-essentials_build-www.gyan.dev)
 - [ ] 支持qq扫码登录
 - [ ] 支持qq帐号密码登录
+- [ ] 增加桌面版界面
 
 # 感谢
 - 感谢腾讯课堂给我们的优质内容，不过app真的不好用。。。

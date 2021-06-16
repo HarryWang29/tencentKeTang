@@ -189,28 +189,31 @@ func main() {
 			UsageText: app.Name + " download <cid>",
 			Description: `
 		下载文件默认保存到当前目录的download目录
-		可通过tree中显示的序号下载章节
-		也可输入cid直接下载全部内容
-		若不填写 t/c则通过t查询
+		可输入cid直接下载全部内容
+		若不填写 flag 则通过tree中的序号下载（支持多序号下载）
 		
 		示例：
 		TencentKeTang d -c 123456
-		TencentKeTang d -t 1
+		TencentKeTang d 1
+		TencentKeTang d 1 2 3 4
 `,
 			Action: func(context *cli.Context) error {
 				var err error
 				switch true {
 				case context.IsSet("cid"):
 					err = myApp.Project.DownLoadByCID(context.String("cid"))
-				case context.IsSet("tree"):
-					err = myApp.Project.DownLoadByIndex(context.Int64("tree") - 1)
 				default:
-					var index int64
-					index, err = strconv.ParseInt(context.Args().Get(0), 10, 64)
-					if err != nil {
-						return errors.Wrap(err, "strconv.ParseInt")
+					for _, s := range context.Args().Slice() {
+						var index int64
+						index, err = strconv.ParseInt(s, 10, 64)
+						if err != nil {
+							return errors.Wrap(err, "strconv.ParseInt")
+						}
+						err = myApp.Project.DownLoadByIndex(index - 1)
+						if err != nil {
+							break
+						}
 					}
-					err = myApp.Project.DownLoadByIndex(index - 1)
 				}
 				if err != nil {
 					return errors.Wrap(err, "myApp.Project.DownLoad*")
@@ -222,11 +225,6 @@ func main() {
 					Name:    "cid",
 					Usage:   "通过cid下载",
 					Aliases: []string{"c"},
-				},
-				&cli.StringFlag{
-					Name:    "tree",
-					Usage:   "通过ls中序号下载",
-					Aliases: []string{"t"},
 				},
 			},
 		},
