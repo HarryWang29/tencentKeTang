@@ -12,7 +12,7 @@
 2. ~~将ffmpeg安装目录填写到config.yaml中~~
 3. ffmpeg使用gpu加速相关，请自行查找资料
 4. 确认文件下载路径
-5. 目前已支持微信扫码登录/cookie登录
+5. 目前已支持qq扫码登录/微信扫码登录/cookie登录
    1. 通过cookie登录
       1. 浏览器登录后，f12 --> NetWork
       2. 查找 `https://ke.qq.com/cgi-bin/identity/info` 接口请求
@@ -21,6 +21,11 @@
       1. 启动程序后输入：`login -type 3`
       2. 手机扫码确认登录
       3. 手动关闭二维码
+   1. qq扫码登录
+      1. 启动程序后输入：`login -type 2`
+      2. 手机扫码确认登录
+      3. 手动关闭二维码
+      4. 若出现二维码已失效，需手动关闭二维码图片，并重新输入`login -type 2`
 6. 执行命令，启动程序(Windows现在可以双击启动程序，而不依托cmd)
    ```shell
       tencentKeTang
@@ -51,7 +56,7 @@
 - [X] 打包ffmpeg/ffprobe(linux没有打包，目前只打包了mac/windows, 
   mac: ffmpeg version 4.3.1, ffprobe version 4.3.1
   windows: ffmpeg version 4.4-essentials_build-www.gyan.dev, ffprobe version 4.4-essentials_build-www.gyan.dev)
-- [ ] 支持qq扫码登录
+- [X] 支持qq扫码登录
 - [ ] 支持qq帐号密码登录
 - [ ] 增加桌面版界面
 

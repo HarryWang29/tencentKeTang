@@ -17,6 +17,10 @@ const (
 	MiniAppQrcode = "https://ke.qq.com/cgi-proxy/get_miniapp_qrcode?"
 	LoginState    = "https://ke.qq.com/cgi-proxy/get_login_state?"
 	A2Login       = "https://ke.qq.com/cgi-proxy/account_login/a2_login?"
+	XLogin        = "https://xui.ptlogin2.qq.com/cgi-bin/xlogin?"
+	PtQrShow      = "https://ssl.ptlogin2.qq.com/ptqrshow?"
+	PtQrLogin     = "https://ssl.ptlogin2.qq.com/ptqrlogin?"
+	Check         = "https://ssl.ptlogin2.qq.com/check?"
 )
 
 type Config struct {
@@ -36,6 +40,9 @@ type Api interface {
 	MiniAppQrcode(rd, r float64) (resp *MiniAppQrcodeResp, err error)
 	LoginState(rd, r float64) (resp *LoginStateResp, err error)
 	A2Login(bkn string, r float64) (resp *A2LoginResp, err error)
+	XLogin() (cookie []*http.Cookie, err error)
+	PtQrShow() (cookie []*http.Cookie, img []byte, err error)
+	PtQrLogin(ptQrToken int64, loginSig, ptDrvs, sID string) (*PtQrLoginResp, error)
 }
 
 type api struct {
@@ -89,9 +96,20 @@ func (a *api) get(url string, resp interface{}, headers ...string) (cookies []*h
 		return nil, errors.Wrap(err, "httplib.Response")
 	}
 	cookies = httpResp.Cookies()
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		return nil, errors.Wrapf(err, "json.Unmarshal,resp:%s", string(body))
+	if resp == nil {
+		return cookies, nil
+	}
+	switch t := resp.(type) {
+	case *[]byte:
+		*t = make([]byte, 0)
+		*t = body
+	case *string:
+		*t = string(body)
+	default:
+		err = json.Unmarshal(body, &resp)
+		if err != nil {
+			return nil, errors.Wrapf(err, "json.Unmarshal,resp:%s", string(body))
+		}
 	}
 	return cookies, nil
 }

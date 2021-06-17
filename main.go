@@ -105,31 +105,34 @@ func main() {
 		tencentKeTang login -type 3                 #微信扫码登录
 `,
 			Action: func(context *cli.Context) error {
+				myApp.Project.SetCookie("")
+				myApp.KeTang.SetCookie(nil)
+				nickName := ""
 				var err error
 				switch context.Int64("type") {
 				case 1:
 					log.Println("帐号密码登录，暂未支持")
 				case 2:
-					log.Println("qq扫码，暂未支持")
+					nickName, err = myApp.Project.QQQRLogin()
+					if err != nil {
+						return errors.Wrap(err, "QQQrLogin")
+					}
 				case 3:
-					myApp.Project.SetCookie("")
-					myApp.KeTang.SetCookie(nil)
 					err = myApp.Project.WxQRLogin()
 					if err == project.ErrExpire {
 						return fmt.Errorf("登录码超时，请重新申请")
 					}
+					resp, err := myApp.KeTang.Info()
+					if err != nil {
+						return err
+					}
+					nickName = resp.NickName
 				default:
 					log.Println("帐号密码登录，暂未支持")
 				}
-				if err != nil {
-					return err
-				}
-				resp, err := myApp.KeTang.Info()
-				if err != nil {
-					return err
-				}
-				log.Printf("登录成功，欢迎%s使用本程序（请自行关闭二维码）", resp.NickName)
-				context.App.Metadata["user_name"] = resp.NickName
+
+				log.Printf("登录成功，欢迎%s使用本程序（请自行关闭二维码）", nickName)
+				context.App.Metadata["user_name"] = nickName
 				return nil
 			},
 			Flags: []cli.Flag{

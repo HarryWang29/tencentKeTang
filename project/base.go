@@ -21,6 +21,7 @@ type Api interface {
 	DownLoadByCID(cid string) (err error)
 	SetCookie(cookie string)
 	WxQRLogin() (err error)
+	QQQRLogin() (nickName string, err error)
 }
 
 type api struct {

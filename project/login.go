@@ -13,6 +13,23 @@ import (
 	"time"
 )
 
+func (a *api) showImg(path string) (err error) {
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", path).Start()
+	case "windows":
+		err = exec.Command("cmd", "/C", "start", "", path).Start()
+	case "darwin":
+		err = exec.Command("open", path).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		return errors.Wrap(err, "exec.Command")
+	}
+	return nil
+}
+
 func (a *api) WxQRLogin() (err error) {
 	//这两个参数没有找到来源
 	var rd float64 = 0.26400682992232993
@@ -46,18 +63,9 @@ func (a *api) WxQRLogin() (err error) {
 	a.AddCookie(qrResp.Cookie)
 
 	//将二维码展示
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", "./qrcode.jpg").Start()
-	case "windows":
-		err = exec.Command("cmd", "/C", "start", "", "./qrcode.jpg").Start()
-	case "darwin":
-		err = exec.Command("open", "./qrcode.jpg").Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
+	err = a.showImg("./qrcode.jpg")
 	if err != nil {
-		return errors.Wrap(err, "exec.Command")
+		return errors.Wrap(err, "showImg")
 	}
 
 	//轮询查询登录状态
@@ -87,4 +95,67 @@ func (a *api) WxQRLogin() (err error) {
 	a.AddCookie(a2Resp.Cookies)
 
 	return nil
+}
+
+func (a *api) QQQRLogin() (nickName string, err error) {
+	//获取基础cookie
+	cookie, err := a.keTang.XLogin()
+	if err != nil {
+		return "", errors.Wrap(err, "QQQRLogin")
+	}
+	a.AddCookie(cookie)
+	//获取二维码
+	cookie, img, err := a.keTang.PtQrShow()
+	if err != nil {
+		return "", errors.Wrap(err, "PtQrShow")
+	}
+
+	//图片保存起来
+	f, err := os.OpenFile("./qrcode.jpg", os.O_RDWR|os.O_CREATE, 0777)
+	if err != nil {
+		return "", errors.Wrap(err, "os.Open")
+	}
+	_, err = f.Write(img)
+	if err != nil {
+		f.Close()
+		return "", errors.Wrap(err, "f.write")
+	}
+	f.Close()
+	//将cookie保存起来
+	a.AddCookie(cookie)
+
+	//将二维码展示
+	err = a.showImg("./qrcode.jpg")
+	if err != nil {
+		return "", errors.Wrap(err, "showImg")
+	}
+
+	//计算qtQrToken
+	sig := a.getCookieByKey("qrsig")
+	e := 0
+	for i := 0; i < len(sig); i++ {
+		e += (e << 5) + int(sig[i])
+	}
+	e = e & 2147483647
+	//轮询查询登录状态
+	for true {
+		time.Sleep(3 * time.Second)
+		resp, err := a.keTang.PtQrLogin(int64(e), a.getCookieByKey("pt_login_sig"), "", "")
+		if err != nil {
+			return "", errors.Wrap(err, "keTang.PtQrLogin")
+		}
+		switch resp.Code {
+		case "0":
+			//手机授权成功，请求回调连接
+			return resp.NickName, nil
+		case "65":
+			//需要刷新二维码
+			return "", errors.New(resp.Msg + "，请关闭二维码图片，并重新输入登录指令")
+		case "66":
+			//二维码未失效，继续等待
+		case "67":
+			//手机已扫码，等待手机确认
+		}
+	}
+	return "", nil
 }
