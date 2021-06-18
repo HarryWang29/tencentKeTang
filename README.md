@@ -38,6 +38,8 @@
    ```shell
       tree -c 123  #获取123中所有视频
       tree -c 123 -t 456 #获取123中的456term
+      tree -u https://ke.qq.com/course/123?taid=1234 #通过url获取cid
+      tree -u https://ke.qq.com/webcourse/index.html#cid=1111&term_id=2222&taid=3333&type=4444&vid=55555    #通过url获取cid/tid
    
       d -c 123  #下载123中所有视频
       d 1    #下载tree列目录中的索引
