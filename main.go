@@ -11,8 +11,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -149,17 +151,54 @@ func main() {
 			UsageText: app.Name + " tree -c 123 -t 456",
 			Description: `
 		列出指定cid/term下所有章节与文件（暂时直接只支持单个cid）
+		也可解析url获取cid与termID（暂时只支持两种格式的链接）
 		
 		示例：
 		TencentKeTang tree -c 123 -t 456 (获取123中的456term)
 		TencentKeTang t -c 123  (获取123中所有视频)
+		TencentKeTang t -u https://ke.qq.com/course/123?taid=1234
+		TencentKeTang t -u https://ke.qq.com/webcourse/index.html#cid=1111&term_id=2222&taid=3333&type=4444&vid=55555
 `,
 			Action: func(context *cli.Context) error {
-				if context.String("cid") == "" {
-					return fmt.Errorf("请填写cid")
+				var cid string
+				var tid int64
+				switch true {
+				case context.IsSet("cid"):
+					cid = context.String("cid")
+					tid = context.Int64("tid")
+				case context.IsSet("url"):
+					u, err := url.Parse(context.String("url"))
+					if err != nil {
+						return errors.Wrap(err, "url.Parse")
+					}
+					//看query中是否有cid
+					v, err := url.ParseQuery(u.Fragment)
+					if err != nil {
+						return errors.Wrap(err, "url.ParseQuery")
+					}
+					cid = v.Get("cid")
+					if cid == "" {
+						//query中不存在cid，则通过path部分获取
+						split := strings.Split(u.Path, "/")
+						if len(split) == 0 {
+							return errors.New("请确认url格式")
+						}
+						cid = split[len(split)-1]
+					} else {
+						//从query获取tid
+						termID := v.Get("term_id")
+						if termID != "" {
+							tid, err = strconv.ParseInt(termID, 10, 64)
+							if err != nil {
+								return errors.Wrap(err, "strconv.ParseInt")
+							}
+						}
+					}
+				default:
+					return errors.New("请填写参数，可输入tree -h查看详情")
 				}
 				//获取章节列表
-				list, err := myApp.Project.GetCatalogue(context.String("cid"), context.Int64("tid"))
+				list, err := myApp.Project.GetCatalogue(cid, tid)
 				if err != nil {
 					return err
 				}
@@ -177,6 +216,11 @@ func main() {
 					Name:    "cid",
 					Usage:   "通过cid下载",
 					Aliases: []string{"c"},
+				},
+				&cli.StringFlag{
+					Name:    "url",
+					Usage:   "通过url解析必要参数",
+					Aliases: []string{"u"},
 				},
 				&cli.Int64Flag{
 					Name:    "tid",
