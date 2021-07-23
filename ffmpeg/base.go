@@ -62,6 +62,14 @@ func New(c *Config) (*Ffmpeg, error) {
 }
 
 func (f *Ffmpeg) Do(vodUrl, name string) error {
+	//替换名称中出现的特殊字符
+	re, err := regexp.Compile("[?、\\\\/*\"<>|]")
+	if err != nil {
+		return errors.Wrap(err, "regexp.Compile")
+	}
+	name = re.ReplaceAllString(name, " ")
+	//去除两侧空格
+	name = strings.TrimSpace(name)
 	//获取目标视频帧数
 	ret, err := f.probe(vodUrl)
 	if err != nil {
