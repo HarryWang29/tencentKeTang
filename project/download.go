@@ -66,14 +66,19 @@ func (a *api) dealData(data interface{}) error {
 		}
 	case *keTang.BasicTask:
 		ids := a.string2list(v.ResidList)
-		for _, id := range ids {
+		for i, id := range ids {
 			vodUrl, err := a.getVodUrl(fmt.Sprint(v.Cid), fmt.Sprint(v.TermID), fmt.Sprint(id))
 			if err != nil {
 				log.Printf("getVodUrl err: %s", err)
 				continue
 			}
 			//下载视频，由于m3u8转mp4主要消耗的是cpu/gpu资源，于是此处不考虑开启并发
-			err = a.downLoad(vodUrl, v.Name)
+			name := v.Name
+			if len(ids) > 1 {
+				//当出现task中有多个视频文件时，会出现覆盖问题，此处增加序号
+				name = fmt.Sprintf("%s%d", name, i+1)
+			}
+			err = a.downLoad(vodUrl, name)
 			if err != nil {
 				log.Printf("download err:%s", err)
 				continue
