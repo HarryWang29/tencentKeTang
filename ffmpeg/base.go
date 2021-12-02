@@ -17,7 +17,7 @@ import (
 
 type Config struct {
 	Path     string `yaml:"path"`
-	First    string `yaml:"first_params"`
+	First    string `yaml:"first"`
 	Params   string `yaml:"params"`
 	SavePath string `yaml:"save_path"`
 }
