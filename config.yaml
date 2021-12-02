@@ -3,7 +3,7 @@ ffmpeg:
   path: ''
   #ffmpeg的前置选项，最先输入的ffmpeg命令（在 -i 之前）
   first: '-hwaccel auto'
-  #ffmpeg使用参数，在 -i 之后。如果要放在 -i 之前需要写到hwaccel后面
+  #ffmpeg使用参数，在 -i 之后。
   params: ''
   #文件下载保存路径
   save_path: './download/'
