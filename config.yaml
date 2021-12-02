@@ -1,8 +1,8 @@
 ffmpeg:
   #ffmpeg安装目录（目录地址即可，ffmpeg与ffprobe都会通过此目录）
   path: ''
-  #hwaccel 硬件加速选项，不知道选啥就留下 auto ，关闭填 none
-  hwaccel: 'auto'
+  #ffmpeg的前置选项，最先输入的ffmpeg命令（在 -i 之前）
+  first: '-hwaccel auto'
   #ffmpeg使用参数，在 -i 之后。如果要放在 -i 之前需要写到hwaccel后面
   params: ''
   #文件下载保存路径
