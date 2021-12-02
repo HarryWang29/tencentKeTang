@@ -9,7 +9,7 @@ import (
 
 func (f *Ffmpeg) mergeAndDownload(vodUrl, name, sockFileName string) error {
 	if len(f.ffmpegFirst) != 0 {
-		args := []string{f.ffmpegFirst, "-i", fmt.Sprintf(`%s`, vodUrl)}
+		args := []string{f.ffmpegFirst..., "-i", fmt.Sprintf(`%s`, vodUrl)}
 	} else {
 		args := []string{"-i", fmt.Sprintf(`%s`, vodUrl)}
 	}
