@@ -8,7 +8,11 @@ import (
 )
 
 func (f *Ffmpeg) mergeAndDownload(vodUrl, name, sockFileName string) error {
-	args := []string{"-i", fmt.Sprintf(`%s`, vodUrl)}
+	if len(f.ffmpegFirst) != 0 {
+		args := []string{f.ffmpegFirst, "-i", fmt.Sprintf(`%s`, vodUrl)}
+	} else {
+		args := []string{"-i", fmt.Sprintf(`%s`, vodUrl)}
+	}
 	if len(f.ffmpegParams) != 0 {
 		args = append(args, f.ffmpegParams...)
 	}
