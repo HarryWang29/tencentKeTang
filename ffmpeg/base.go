@@ -17,6 +17,7 @@ import (
 
 type Config struct {
 	Path     string `yaml:"path"`
+	Hwaccel  string `yaml:"hwaccel"`
 	Params   string `yaml:"params"`
 	SavePath string `yaml:"save_path"`
 }
@@ -24,6 +25,7 @@ type Config struct {
 type Ffmpeg struct {
 	c              *Config
 	ffmpegExec     string
+	ffmpegHwaccel  []string
 	ffmpegParams   []string
 	ffprobeExec    string
 	address        string
@@ -44,6 +46,9 @@ func New(c *Config) (*Ffmpeg, error) {
 	if runtime.GOOS == "windows" {
 		f.ffmpegExec += ".exe"
 		f.ffprobeExec += ".exe"
+	}
+	if c.Hwaccel != "" {
+		f.ffmpegHwaccel = strings.Split(c.Params, " ")
 	}
 	if c.Params != "" {
 		f.ffmpegParams = strings.Split(c.Params, " ")
