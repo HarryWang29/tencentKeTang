@@ -48,7 +48,9 @@ func New(c *Config) (*Ffmpeg, error) {
 		f.ffprobeExec += ".exe"
 	}
 	if c.Hwaccel != "" {
-		f.ffmpegHwaccel = strings.Split(c.Params, " ")
+		f.ffmpegHwaccel = strings.Split(c.Hwaccel, " ")
+	} else {
+		f.ffmpegHwaccel = "auto"
 	}
 	if c.Params != "" {
 		f.ffmpegParams = strings.Split(c.Params, " ")
