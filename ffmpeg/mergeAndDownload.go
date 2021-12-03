@@ -17,7 +17,7 @@ func (f *Ffmpeg) mergeAndDownload(vodUrl, name, sockFileName string) error {
 		args = append(args, f.ffmpegParams...)
 	}
 	args = append(args, "-progress", fmt.Sprintf(`tcp://%s`, sockFileName))
-	args = append(args, name, "-y")
+	args = append(args, "-f mp4", name, "-y")
 	cmd := exec.Command(f.ffmpegExec, args...)
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
