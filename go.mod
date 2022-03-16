@@ -28,5 +28,7 @@ require (
 	golang.org/x/image v0.0.0-20210607152325-775e3b0c77b9 // indirect
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
 	gopkg.in/yaml.v2 v2.4.0
+	gorm.io/driver/mysql v1.1.1
+	gorm.io/gorm v1.21.12
 	honnef.co/go/js/dom v0.0.0-20200509013220-d4405f7ab4d8 // indirect
 )

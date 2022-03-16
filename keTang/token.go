@@ -16,10 +16,12 @@ type Token struct {
 }
 
 type TokenResult struct {
-	Sign  string `json:"sign"`
-	T     string `json:"t"`
-	Exper int    `json:"exper"`
-	Us    string `json:"us"`
+	Sign    string `json:"sign"`
+	T       string `json:"t"`
+	Exper   int    `json:"exper"`
+	Us      string `json:"us"`
+	ErrCode int    `json:"err_code"`
+	ErrMsg  string `json:"err_msg"`
 }
 
 type TokenResp struct {
@@ -44,6 +46,9 @@ func (a *api) Token(t *Token) (ret *TokenResult, err error) {
 		return nil, errors.Wrap(err, "a.get")
 	}
 
+	if resp.Result.ErrCode != 0 {
+		return nil, errors.New(resp.Result.ErrMsg)
+	}
 	if resp.Result == nil {
 		return nil, errors.New("tokenResp.Result is empty")
 	}

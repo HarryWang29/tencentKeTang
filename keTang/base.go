@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
+	"time"
 )
 
 const (
@@ -79,7 +80,7 @@ func (a *api) post(url string, resp interface{}, headers ...string) (cookies []*
 }
 
 func (a *api) get(url string, resp interface{}, headers ...string) (cookies []*http.Cookie, err error) {
-	req := httplib.Get(url)
+	req := httplib.Get(url).SetTimeout(time.Minute, time.Minute)
 	if len(headers)%2 != 0 {
 		return nil, errors.New("headers error")
 	}
