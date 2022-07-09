@@ -32,14 +32,10 @@ zip_releases=$(addsuffix .zip, $(WINDOWS_ARCH_LIST))
 $(gz_releases): %.zip : %
 	chmod +x $(BINDIR)/$(NAME)-$(basename $@)
 	cp config.yaml $(BINDIR)/
-	cp libs/ffmpeg $(BINDIR)/
-	cp libs/ffprobe $(BINDIR)/
 	zip -m -j $(BINDIR)/$(NAME)-$(basename $@).zip $(BINDIR)/$(NAME)-$(basename $@) $(BINDIR)/config.yaml $(BINDIR)/ffmpeg $(BINDIR)/ffprobe
 
 $(zip_releases): %.zip : %
 	cp config.yaml $(BINDIR)/
-	cp libs/ffmpeg.exe $(BINDIR)/
-	cp libs/ffprobe.exe $(BINDIR)/
 	zip -m -j $(BINDIR)/$(NAME)-$(basename $@).zip $(BINDIR)/$(NAME)-$(basename $@).exe $(BINDIR)/config.yaml $(BINDIR)/ffmpeg.exe $(BINDIR)/ffprobe.exe
 
 all-arch: $(PLATFORM_LIST) $(WINDOWS_ARCH_LIST)
