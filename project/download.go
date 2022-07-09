@@ -15,7 +15,7 @@ func (a *api) DownLoadByIndex(i int64) (err error) {
 		return errors.New("index error")
 	}
 	catalogue := a.catalogues[i]
-	err = a.dealData(catalogue.Data)
+	err = a.dealData(catalogue.Data, []string{a.catalogueName})
 	if err != nil {
 		return errors.Wrap(err, "dealCatalogue")
 	}
@@ -28,7 +28,7 @@ func (a *api) DownLoadByCID(cid string) (err error) {
 		return errors.Wrap(err, "getCatalogue")
 	}
 	for _, catalogue := range list {
-		err = a.dealData(catalogue.Data)
+		err = a.dealData(catalogue.Data, []string{a.catalogueName})
 		if err != nil {
 			log.Printf("dealCatalogue err:%s", err)
 			continue
@@ -38,27 +38,42 @@ func (a *api) DownLoadByCID(cid string) (err error) {
 }
 
 //递归处理
-func (a *api) dealData(data interface{}) error {
+func (a *api) dealData(data interface{}, pathList []string) error {
+	if pathList == nil {
+		pathList = []string{}
+	}
 	switch v := data.(type) {
 	case *keTang.BasicTerm:
+		if v.Name != "" {
+			path := fmt.Sprintf("%d.", v.TermNo+1)
+			pathList = append(pathList, path+v.Name)
+		}
 		for _, chapter := range v.ChapterInfo {
-			err := a.dealData(chapter)
+			err := a.dealData(chapter, pathList)
 			if err != nil {
 				log.Printf("dealChapterInfo err:%s", err)
 				continue
 			}
 		}
 	case *keTang.BasicChapter:
+		if v.Name != "" {
+			path := fmt.Sprintf("%d.", v.ChNo+1)
+			pathList = append(pathList, path+v.Name)
+		}
 		for _, sub := range v.SubInfo {
-			err := a.dealData(sub)
+			err := a.dealData(sub, pathList)
 			if err != nil {
 				log.Printf("dealSubInfo err:%s", err)
 				continue
 			}
 		}
 	case *keTang.BasicSub:
+		if v.Name != "" {
+			path := fmt.Sprintf("%d.", v.SubID+1)
+			pathList = append(pathList, path+v.Name)
+		}
 		for _, task := range v.TaskInfo {
-			err := a.dealData(task)
+			err := a.dealData(task, pathList)
 			if err != nil {
 				log.Printf("dealTask err:%s", err)
 				continue
@@ -78,7 +93,8 @@ func (a *api) dealData(data interface{}) error {
 				//当出现task中有多个视频文件时，会出现覆盖问题，此处增加序号
 				name = fmt.Sprintf("%s%d", name, i+1)
 			}
-			err = a.downLoad(vodUrl, name)
+			pathList = append(pathList, name)
+			err = a.downLoad(vodUrl, pathList)
 			if err != nil {
 				log.Printf("download err:%s", err)
 				continue
@@ -118,8 +134,8 @@ func (a *api) getVodUrl(cid, termID, vID string) (vodUrl string, err error) {
 	return vodUrl, nil
 }
 
-func (a *api) downLoad(vodUrl, name string) (err error) {
-	err = a.ffmpeg.Do(vodUrl, name)
+func (a *api) downLoad(vodUrl string, path []string) (err error) {
+	err = a.ffmpeg.Do(vodUrl, path)
 	if err != nil {
 		return errors.Wrap(err, "ffmpeg.Do")
 	}
@@ -161,6 +177,17 @@ func (a *api) getMediaToken(cID, termID string) string {
 			a.getCookieByKey("uin"),
 			a.getCookieByKey("uid_a2"),
 			a.getCookieByKey("uid_appid"),
+			a.getCookieByKey("uid_origin_uid_type"),
+			cID,
+			termID,
+		)
+	default:
+		origin = fmt.Sprintf("uin=%s;skey=%s;pskey=%s;plskey=%s;ext=;uid_type=%s;uid_origin_uid_type=%s;uid_origin_auth_type=0;cid=%s;term_id=%s;vod_type=0;platform=3",
+			a.getCookieByKey("uin"),
+			a.getCookieByKey("skey"),
+			a.getCookieByKey("p_skey"),
+			a.getCookieByKey("p_lskey"),
+			a.getCookieByKey("uid_type"),
 			a.getCookieByKey("uid_origin_uid_type"),
 			cID,
 			termID,

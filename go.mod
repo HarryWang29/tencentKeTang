@@ -13,12 +13,14 @@ require (
 	github.com/goxjs/glfw v0.0.0-20191126052801-d2efb5f20838 // indirect
 	github.com/iris-contrib/schema v0.0.6
 	github.com/jthmath/winapi v0.0.0-20170505022915-d8c4352fe12b // indirect
+	github.com/makiuchi-d/gozxing v0.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/peterh/liner v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/schollz/progressbar/v3 v3.8.1
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
 	github.com/tidwall/gjson v1.8.0
 	github.com/tidwall/pretty v1.1.1 // indirect

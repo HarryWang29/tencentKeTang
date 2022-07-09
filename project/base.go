@@ -25,10 +25,11 @@ type Api interface {
 }
 
 type api struct {
-	keTang     keTang.Api
-	ffmpeg     *ffmpeg.Ffmpeg
-	catalogues []*Catalogue
-	cookie     sync.Map
+	keTang        keTang.Api
+	ffmpeg        *ffmpeg.Ffmpeg
+	catalogues    []*Catalogue
+	cookie        sync.Map
+	catalogueName string
 }
 
 func New(kt keTang.Api, f *ffmpeg.Ffmpeg, cookie string) Api {

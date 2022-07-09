@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"crawler/tencentKeTang/util"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/schollz/progressbar/v3"
@@ -9,6 +10,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -61,15 +63,7 @@ func New(c *Config) (*Ffmpeg, error) {
 	return f, nil
 }
 
-func (f *Ffmpeg) Do(vodUrl, name string) error {
-	//替换名称中出现的特殊字符
-	re, err := regexp.Compile("[?、\\\\/*\"<>|]")
-	if err != nil {
-		return errors.Wrap(err, "regexp.Compile")
-	}
-	name = re.ReplaceAllString(name, " ")
-	//去除两侧空格
-	name = strings.TrimSpace(name)
+func (f *Ffmpeg) Do(vodUrl string, path []string) error {
 	//获取目标视频帧数
 	ret, err := f.probe(vodUrl)
 	if err != nil {
@@ -77,8 +71,10 @@ func (f *Ffmpeg) Do(vodUrl, name string) error {
 	}
 	f.remoteDuration = gjson.Get(ret, "format.duration").Float()
 	//检查文件是否存在
-	savePath := f.c.SavePath + "/" + name + ".mp4"
-	err = os.MkdirAll(f.c.SavePath, os.ModePerm)
+	path = append([]string{f.c.SavePath}, path...)
+	savePath := util.PathJoin(path...) + ".mp4"
+	saveDir, name := filepath.Split(savePath)
+	err = os.MkdirAll(saveDir, os.ModePerm)
 	if err != nil {
 		return errors.Wrapf(err, "os.MkdirAll path:%s", f.c.SavePath)
 	}
