@@ -10,7 +10,7 @@ import (
 
 func PathJoin(paths ...string) string {
 	//替换名称中出现的特殊字符
-	re, _ := regexp.Compile("[?、\\\\/*\"<>|]")
+	re, _ := regexp.Compile("[?:\\\\/*\"<>|]")
 	names := make([]string, 0, len(paths))
 	for _, path := range paths {
 		path = filepath.Clean(path)
@@ -20,6 +20,14 @@ func PathJoin(paths ...string) string {
 		names = append(names, path)
 	}
 	return filepath.Join(names...)
+}
+
+func ReplaceName(name string) string {
+	re, _ := regexp.Compile("[?:\\\\/*\"<>|]")
+	name = filepath.Clean(name)
+	name = re.ReplaceAllString(name, "")
+	name = strings.TrimSpace(name)
+	return name
 }
 
 func String2list(s string) []int64 {

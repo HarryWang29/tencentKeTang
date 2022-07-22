@@ -2,6 +2,7 @@ package project
 
 import (
 	"crawler/tencentKeTang/keTang"
+	"crawler/tencentKeTang/util"
 	"encoding/base64"
 	"fmt"
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ func (a *api) DownLoadByIndex(i int64) (err error) {
 		return errors.New("index error")
 	}
 	catalogue := a.catalogues[i]
-	err = a.dealData(catalogue.Data, []string{a.catalogueName})
+	err = a.dealData(catalogue.Data, []string{util.ReplaceName(a.catalogueName)})
 	if err != nil {
 		return errors.Wrap(err, "dealCatalogue")
 	}
@@ -28,7 +29,7 @@ func (a *api) DownLoadByCID(cid string) (err error) {
 		return errors.Wrap(err, "getCatalogue")
 	}
 	for _, catalogue := range list {
-		err = a.dealData(catalogue.Data, []string{a.catalogueName})
+		err = a.dealData(catalogue.Data, []string{util.ReplaceName(a.catalogueName)})
 		if err != nil {
 			log.Printf("dealCatalogue err:%s", err)
 			continue
@@ -46,7 +47,7 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 	case *keTang.BasicTerm:
 		if v.Name != "" {
 			path := fmt.Sprintf("%d.", v.TermNo+1)
-			pathList = append(pathList, path+v.Name)
+			pathList = append(pathList, util.ReplaceName(path+v.Name))
 		}
 		for _, chapter := range v.ChapterInfo {
 			err := a.dealData(chapter, pathList)
@@ -58,7 +59,7 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 	case *keTang.BasicChapter:
 		if v.Name != "" {
 			path := fmt.Sprintf("%d.", v.ChNo+1)
-			pathList = append(pathList, path+v.Name)
+			pathList = append(pathList, util.ReplaceName(path+v.Name))
 		}
 		for _, sub := range v.SubInfo {
 			err := a.dealData(sub, pathList)
@@ -70,7 +71,7 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 	case *keTang.BasicSub:
 		if v.Name != "" {
 			path := fmt.Sprintf("%d.", v.SubID+1)
-			pathList = append(pathList, path+v.Name)
+			pathList = append(pathList, util.ReplaceName(path+v.Name))
 		}
 		for _, task := range v.TaskInfo {
 			err := a.dealData(task, pathList)
@@ -97,7 +98,7 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 				//当出现task中有多个视频文件时，会出现覆盖问题，此处增加序号
 				name = fmt.Sprintf("%s%d", name, i+1)
 			}
-			pathList = append(pathList, name)
+			pathList = append(pathList, util.ReplaceName(name))
 			err = a.downLoad(vodUrl, bitrate, pathList)
 			if err != nil {
 				log.Printf("download err:%s", err)

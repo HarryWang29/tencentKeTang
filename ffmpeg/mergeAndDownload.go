@@ -3,6 +3,7 @@ package ffmpeg
 import (
 	"bytes"
 	"crawler/tencentKeTang/internal/httplib"
+	"crawler/tencentKeTang/util"
 	"fmt"
 	"github.com/pkg/errors"
 	"net/url"
@@ -73,6 +74,7 @@ func (f *Ffmpeg) downloadTs(vodUrl string, bitrate int, mp4Path string) error {
 			loadUrl.Path = filepath.Join(filepath.Dir(loadUrl.Path), parm[0])
 			loadUrl.RawQuery = parm[1]
 
+			line = util.ReplaceName(line)
 			downloadPath := filepath.Join(m3u8Dir, line)
 			task := &task{
 				vodUrl:   vodUrl,
@@ -117,6 +119,7 @@ func (f *Ffmpeg) doDownloadTs(tsUrl, savePath string) error {
 func (f *Ffmpeg) merge(src, dst string, bitrate int) error {
 	args := []string{
 		"-allowed_extensions", "ALL",
+		"-hwaccel", "auto",
 		"-i", src,
 	}
 	if len(f.ffmpegParams) != 0 {

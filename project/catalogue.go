@@ -1,6 +1,7 @@
 package project
 
 import (
+	"crawler/tencentKeTang/util"
 	"fmt"
 	"time"
 )
@@ -17,7 +18,7 @@ func (a *api) GetCatalogue(cid string, tid int64) (list []*Catalogue, err error)
 	if err != nil {
 		return nil, err
 	}
-	a.catalogueName = resp.Result.CourseDetail.Name
+	a.catalogueName = util.ReplaceName(resp.Result.CourseDetail.Name)
 	list = make([]*Catalogue, 0)
 	//todo 更改为树结构
 	for _, term := range resp.Result.CourseDetail.Terms {
