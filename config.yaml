@@ -5,6 +5,8 @@ ffmpeg:
   params: ''
   #文件下载保存路径
   save_path: './download/'
+  #并行下载线程
+  worker: 10
 http:
   #腾讯课堂cookie
   cookie: ''
