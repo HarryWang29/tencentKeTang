@@ -30,6 +30,7 @@ type api struct {
 	catalogues    []*Catalogue
 	cookie        sync.Map
 	catalogueName string
+	vodUrlMap     sync.Map
 }
 
 func New(kt keTang.Api, f *ffmpeg.Ffmpeg, cookie string) Api {

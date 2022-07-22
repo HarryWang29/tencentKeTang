@@ -1,7 +1,6 @@
 package ffmpeg
 
 import (
-	"crawler/tencentKeTang/util"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/schollz/progressbar/v3"
@@ -15,12 +14,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Config struct {
 	Path     string `yaml:"path"`
 	Params   string `yaml:"params"`
 	SavePath string `yaml:"save_path"`
+	Worker   int    `yaml:"worker"`
 }
 
 type Ffmpeg struct {
@@ -30,6 +31,11 @@ type Ffmpeg struct {
 	ffprobeExec    string
 	address        string
 	remoteDuration float64
+	listener       net.Listener
+	workerChannel  chan *task
+	finishChannel  chan *task
+	taskMap        sync.Map
+	finishMap      sync.Map
 }
 
 func New(c *Config) (*Ffmpeg, error) {
@@ -60,10 +66,19 @@ func New(c *Config) (*Ffmpeg, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "调用ffprobe出错，请检查地址")
 	}
+
+	f.workerChannel = make(chan *task, f.c.Worker)
+	for i := 0; i < f.c.Worker; i++ {
+		go f.taskProcess()
+	}
+
+	//启动一个协程进行合并视频
+	f.finishChannel = make(chan *task, 1)
+	go f.finish()
 	return f, nil
 }
 
-func (f *Ffmpeg) Do(vodUrl string, path []string) error {
+func (f *Ffmpeg) Do(vodUrl string, bitrate int, path []string) error {
 	//获取目标视频帧数
 	ret, err := f.probe(vodUrl)
 	if err != nil {
@@ -72,8 +87,9 @@ func (f *Ffmpeg) Do(vodUrl string, path []string) error {
 	f.remoteDuration = gjson.Get(ret, "format.duration").Float()
 	//检查文件是否存在
 	path = append([]string{f.c.SavePath}, path...)
-	savePath := util.PathJoin(path...) + ".mp4"
-	saveDir, name := filepath.Split(savePath)
+	//savePath := util.PathJoin(path...) + ".mp4"
+	savePath := filepath.Join(path...) + ".mp4"
+	saveDir, _ := filepath.Split(savePath)
 	err = os.MkdirAll(saveDir, os.ModePerm)
 	if err != nil {
 		return errors.Wrapf(err, "os.MkdirAll path:%s", f.c.SavePath)
@@ -98,24 +114,17 @@ func (f *Ffmpeg) Do(vodUrl string, path []string) error {
 		return errors.Wrap(err, "os.Stat")
 	}
 
-	l, err := net.Listen("tcp", ":8829")
-	if err != nil {
-		panic(err)
-	}
-	go f.progress(l, name)
-	f.address = "127.0.0.1:8829"
-
-	err = f.mergeAndDownload(vodUrl, savePath, f.address)
+	err = f.downloadTs(vodUrl, bitrate, savePath)
 	if err != nil {
 		return errors.Wrap(err, "mergeAndDownload")
 	}
 	return nil
 }
 
-func (f *Ffmpeg) progress(l net.Listener, name string) {
+func (f *Ffmpeg) progress(name string) {
 	re := regexp.MustCompile(`out_time_ms=(\d+)`)
 	reFps := regexp.MustCompile(`fps=(\d+)`)
-	fd, err := l.Accept()
+	fd, err := f.listener.Accept()
 	if err != nil {
 		log.Fatal("accept error:", err)
 	}
@@ -161,7 +170,7 @@ func (f *Ffmpeg) progress(l net.Listener, name string) {
 			}
 			if strings.Contains(datas[i], "progress=end") {
 				fd.Close()
-				l.Close()
+				f.listener.Close()
 				fmt.Println("")
 				return
 			}

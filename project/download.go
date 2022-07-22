@@ -82,19 +82,23 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 	case *keTang.BasicTask:
 		ids := a.string2list(v.ResidList)
 		for i, id := range ids {
-			vodUrl, err := a.getVodUrl(fmt.Sprint(v.Cid), fmt.Sprint(v.TermID), fmt.Sprint(id))
+			//简单粗暴的解决方案，每次启动不会下载同样的视频
+			_, loaded := a.vodUrlMap.LoadOrStore(fmt.Sprintf("%d|%d|%d", v.Cid, v.TermID, id), "")
+			if loaded {
+				continue
+			}
+			vodUrl, bitrate, err := a.getVodUrl(fmt.Sprint(v.Cid), fmt.Sprint(v.TermID), fmt.Sprint(id))
 			if err != nil {
 				log.Printf("getVodUrl err: %s", err)
 				continue
 			}
-			//下载视频，由于m3u8转mp4主要消耗的是cpu/gpu资源，于是此处不考虑开启并发
 			name := v.Name
 			if len(ids) > 1 {
 				//当出现task中有多个视频文件时，会出现覆盖问题，此处增加序号
 				name = fmt.Sprintf("%s%d", name, i+1)
 			}
 			pathList = append(pathList, name)
-			err = a.downLoad(vodUrl, pathList)
+			err = a.downLoad(vodUrl, bitrate, pathList)
 			if err != nil {
 				log.Printf("download err:%s", err)
 				continue
@@ -106,14 +110,14 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 	return nil
 }
 
-func (a *api) getVodUrl(cid, termID, vID string) (vodUrl string, err error) {
+func (a *api) getVodUrl(cid, termID, vID string) (vodUrl string, bitrate int, err error) {
 	//获取文件token
 	ret, err := a.keTang.Token(&keTang.Token{
 		TermID: termID,
 		FileID: vID,
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "keTang.Token")
+		return "", 0, errors.Wrap(err, "keTang.Token")
 	}
 	//获取下载连接
 	mediaInfo, err := a.keTang.MediaInfo(&keTang.MediaInfo{
@@ -124,18 +128,19 @@ func (a *api) getVodUrl(cid, termID, vID string) (vodUrl string, err error) {
 		Vid:   vID,
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "keTang.MediaInfo")
+		return "", 0, errors.Wrap(err, "keTang.MediaInfo")
 	}
 
 	//拼接视频真实地址
 	vodUrl = mediaInfo.VideoInfo.TranscodeList[len(mediaInfo.VideoInfo.TranscodeList)-1].URL
+	bitrate = mediaInfo.VideoInfo.TranscodeList[len(mediaInfo.VideoInfo.TranscodeList)-1].Bitrate
 	i := strings.LastIndex(vodUrl, "/")
 	vodUrl = vodUrl[:i+1] + "voddrm.token." + a.getMediaToken(cid, termID) + "." + vodUrl[i+1:]
-	return vodUrl, nil
+	return vodUrl, bitrate, nil
 }
 
-func (a *api) downLoad(vodUrl string, path []string) (err error) {
-	err = a.ffmpeg.Do(vodUrl, path)
+func (a *api) downLoad(vodUrl string, bitrate int, path []string) (err error) {
+	err = a.ffmpeg.Do(vodUrl, bitrate, path)
 	if err != nil {
 		return errors.Wrap(err, "ffmpeg.Do")
 	}
