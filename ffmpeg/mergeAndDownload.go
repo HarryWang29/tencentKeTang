@@ -71,7 +71,8 @@ func (f *Ffmpeg) downloadTs(vodUrl string, bitrate int, mp4Path string) error {
 		} else if strings.HasPrefix(line, "#") {
 		} else {
 			parm := strings.Split(line, "?")
-			loadUrl.Path = filepath.Join(filepath.Dir(loadUrl.Path), parm[0])
+			urlPath := strings.Split(loadUrl.Path, "/")
+			loadUrl.Path = strings.Join(append(urlPath[:len(urlPath)-1], parm[0]), "/")
 			loadUrl.RawQuery = parm[1]
 
 			line = util.ReplaceName(line)
