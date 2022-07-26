@@ -10,18 +10,19 @@ import (
 )
 
 const (
-	ItemsUri      = "https://ke.qq.com/cgi-bin/course/get_terms_detail?"
-	TokenUri      = "https://ke.qq.com/cgi-bin/qcloud/get_token?"
-	MediaUri      = "https://playvideo.qcloud.com/getplayinfo/v2/1258712167/"
-	InfoUri       = "https://ke.qq.com/cgi-bin/identity/info?"
-	BasicInfoUri  = "https://ke.qq.com/cgi-bin/course/basic_info?"
-	MiniAppQrcode = "https://ke.qq.com/cgi-proxy/get_miniapp_qrcode?"
-	LoginState    = "https://ke.qq.com/cgi-proxy/get_login_state?"
-	A2Login       = "https://ke.qq.com/cgi-proxy/account_login/a2_login?"
-	XLogin        = "https://xui.ptlogin2.qq.com/cgi-bin/xlogin?"
-	PtQrShow      = "https://ssl.ptlogin2.qq.com/ptqrshow?"
-	PtQrLogin     = "https://ssl.ptlogin2.qq.com/ptqrlogin?"
-	Check         = "https://ssl.ptlogin2.qq.com/check?"
+	ItemsUri            = "https://ke.qq.com/cgi-bin/course/get_terms_detail?"
+	TokenUri            = "https://ke.qq.com/cgi-bin/qcloud/get_token?"
+	MediaUri            = "https://playvideo.qcloud.com/getplayinfo/v2/1258712167/"
+	InfoUri             = "https://ke.qq.com/cgi-bin/identity/info?"
+	BasicInfoUri        = "https://ke.qq.com/cgi-bin/course/basic_info?"
+	MiniAppQrcode       = "https://ke.qq.com/cgi-proxy/get_miniapp_qrcode?"
+	LoginState          = "https://ke.qq.com/cgi-proxy/get_login_state?"
+	A2Login             = "https://ke.qq.com/cgi-proxy/account_login/a2_login?"
+	XLogin              = "https://xui.ptlogin2.qq.com/cgi-bin/xlogin?"
+	PtQrShow            = "https://ssl.ptlogin2.qq.com/ptqrshow?"
+	PtQrLogin           = "https://ssl.ptlogin2.qq.com/ptqrlogin?"
+	Check               = "https://ssl.ptlogin2.qq.com/check?"
+	DescribeRecVideoUri = "https://ke.qq.com/cgi-proxy/rec_video/describe_rec_video?"
 )
 
 type Config struct {
@@ -44,6 +45,7 @@ type Api interface {
 	XLogin() (cookie []*http.Cookie, err error)
 	PtQrShow() (cookie []*http.Cookie, img []byte, err error)
 	PtQrLogin(ptQrToken int64, loginSig, ptDrvs, sID string) (*PtQrLoginResp, error)
+	DescribeRecVideo(req *DescribeRecVideoReq) (info *RecVideoInfos, dk string, err error)
 }
 
 type api struct {

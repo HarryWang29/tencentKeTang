@@ -88,7 +88,7 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 			if loaded {
 				continue
 			}
-			vodUrl, bitrate, err := a.getVodUrl(fmt.Sprint(v.Cid), fmt.Sprint(v.TermID), fmt.Sprint(id))
+			vodUrl, dk, bitrate, err := a.getVodUrl(fmt.Sprint(v.Cid), fmt.Sprint(v.TermID), fmt.Sprint(id))
 			if err != nil {
 				log.Printf("getVodUrl err: %s", err)
 				continue
@@ -99,7 +99,7 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 				name = fmt.Sprintf("%s%d", name, i+1)
 			}
 			pathList = append(pathList, util.ReplaceName(name))
-			err = a.downLoad(vodUrl, bitrate, pathList)
+			err = a.downLoad(vodUrl, dk, bitrate, pathList)
 			if err != nil {
 				log.Printf("download err:%s", err)
 				continue
@@ -111,41 +111,56 @@ func (a *api) dealData(data interface{}, pathList []string) error {
 	return nil
 }
 
-func (a *api) getVodUrl(cid, termID, vID string) (vodUrl string, bitrate int, err error) {
-	//获取文件token
-	ret, err := a.keTang.Token(&keTang.Token{
-		TermID: termID,
-		FileID: vID,
-	})
-	if err != nil {
-		return "", 0, errors.Wrap(err, "keTang.Token")
-	}
+func (a *api) getVodUrl(cid, termID, vID string) (vodUrl, dk string, bitrate int, err error) {
 	//获取下载连接
-	mediaInfo, err := a.keTang.MediaInfo(&keTang.MediaInfo{
-		Sign:  ret.Sign,
-		T:     ret.T,
-		Exper: ret.Exper,
-		Us:    ret.Us,
-		Vid:   vID,
+	info, dk, err := a.keTang.DescribeRecVideo(&keTang.DescribeRecVideoReq{
+		CourseID: cid,
+		FileID:   vID,
+		TermID:   termID,
+		VodType:  0,
+		Headers: keTang.DescribeRecvVideoHeader{
+			SrvAppid: 201,
+			CliAppid: "ke",
+			Uin:      a.getUin(),
+			CliInfo: struct {
+				CliPlatform int `json:"cli_platform"`
+			}{
+				CliPlatform: 3,
+			},
+		},
 	})
 	if err != nil {
-		return "", 0, errors.Wrap(err, "keTang.MediaInfo")
+		return "", "", 0, errors.Wrap(err, "keTang.MediaInfo")
 	}
 
 	//拼接视频真实地址
-	vodUrl = mediaInfo.VideoInfo.TranscodeList[len(mediaInfo.VideoInfo.TranscodeList)-1].URL
-	bitrate = mediaInfo.VideoInfo.TranscodeList[len(mediaInfo.VideoInfo.TranscodeList)-1].Bitrate
+	vodUrl = info.Url
 	i := strings.LastIndex(vodUrl, "/")
 	vodUrl = vodUrl[:i+1] + "voddrm.token." + a.getMediaToken(cid, termID) + "." + vodUrl[i+1:]
-	return vodUrl, bitrate, nil
+	return vodUrl, dk, info.VideoBitrate, nil
 }
 
-func (a *api) downLoad(vodUrl string, bitrate int, path []string) (err error) {
-	err = a.ffmpeg.Do(vodUrl, bitrate, path)
+func (a *api) downLoad(vodUrl, dk string, bitrate int, path []string) (err error) {
+	err = a.ffmpeg.Do(vodUrl, dk, bitrate, path)
 	if err != nil {
 		return errors.Wrap(err, "ffmpeg.Do")
 	}
 	return nil
+}
+
+func (a *api) getUin() (uin string) {
+	v, ok := a.cookie.Load("uid_type")
+	if !ok {
+		v = ""
+	}
+	switch v.(string) {
+	case "":
+		//发现有没有"uid_type"的情况
+		uin = gjson.Get(a.getCookieByKey("tdw_data_new_2"), "uin").String()
+	default:
+		uin = a.getCookieByKey("uin")
+	}
+	return
 }
 
 func (a *api) getMediaToken(cID, termID string) string {

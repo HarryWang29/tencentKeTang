@@ -1,6 +1,6 @@
 NAME=tencentKeTang
 BINDIR=bin
-VERSION=v0.2.7
+VERSION=v0.2.8
 BUILDTIME=$(shell date -u)
 GOBUILD=CGO_ENABLED=0 go build -ldflags '-w -s -X main.Version=${VERSION}'
 

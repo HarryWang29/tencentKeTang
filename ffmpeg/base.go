@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -36,6 +37,7 @@ type Ffmpeg struct {
 	finishChannel  chan *task
 	taskMap        sync.Map
 	finishMap      sync.Map
+	httpclient     *http.Client
 }
 
 func New(c *Config) (*Ffmpeg, error) {
@@ -75,10 +77,16 @@ func New(c *Config) (*Ffmpeg, error) {
 	//启动一个协程进行合并视频
 	f.finishChannel = make(chan *task, 1)
 	go f.finish()
+
+	f.httpclient = &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 100,
+		},
+	}
 	return f, nil
 }
 
-func (f *Ffmpeg) Do(vodUrl string, bitrate int, path []string) error {
+func (f *Ffmpeg) Do(vodUrl, dk string, bitrate int, path []string) error {
 	//获取目标视频帧数
 	ret, err := f.probe(vodUrl)
 	if err != nil {
@@ -114,7 +122,7 @@ func (f *Ffmpeg) Do(vodUrl string, bitrate int, path []string) error {
 		return errors.Wrap(err, "os.Stat")
 	}
 
-	err = f.downloadTs(vodUrl, bitrate, savePath)
+	err = f.downloadTs(vodUrl, dk, bitrate, savePath)
 	if err != nil {
 		return errors.Wrap(err, "mergeAndDownload")
 	}

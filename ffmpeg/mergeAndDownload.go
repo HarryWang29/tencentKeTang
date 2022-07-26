@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"crawler/tencentKeTang/internal/httplib"
 	"crawler/tencentKeTang/util"
+	"encoding/base64"
 	"fmt"
 	"github.com/pkg/errors"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -14,15 +16,29 @@ import (
 	"strings"
 )
 
-func (f *Ffmpeg) downloadTs(vodUrl string, bitrate int, mp4Path string) error {
+func (f *Ffmpeg) downloadTs(vodUrl, dk string, bitrate int, mp4Path string) error {
 	dir := filepath.Dir(mp4Path)
 	fileName := filepath.Base(mp4Path)
 	m3u8Dir := filepath.Join(dir, fileName+"m3u8")
+	fmt.Printf("开始下载：%s\n", fileName)
 
 	err := os.MkdirAll(m3u8Dir, os.ModePerm)
 	if err != nil {
 		return errors.Wrapf(err, "os.MkdirAll(%s)", m3u8Dir)
 	}
+	key, err := base64.StdEncoding.DecodeString(dk)
+	if err != nil {
+		return errors.Wrap(err, "base64.StdEncoding.DecodeString")
+	}
+	keyFile, err := os.OpenFile(filepath.Join(m3u8Dir, "key"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		return errors.Wrapf(err, "os.OpenFile(%s)", filepath.Join(m3u8Dir, "index.m3u8"))
+	}
+	_, err = keyFile.Write(key)
+	if err != nil {
+		return errors.Wrap(err, "keyFile.Write")
+	}
+	_ = keyFile.Close()
 
 	m3u8, err := httplib.Get(vodUrl).String()
 	if err != nil {
@@ -42,7 +58,6 @@ func (f *Ffmpeg) downloadTs(vodUrl string, bitrate int, mp4Path string) error {
 		return errors.Wrap(err, "os.OpenFile")
 	}
 
-	keys := make(map[string]string)
 	tsCount := 0
 	for _, line := range lines {
 		if strings.HasPrefix(line, "#EXT-X-KEY") {
@@ -50,24 +65,7 @@ func (f *Ffmpeg) downloadTs(vodUrl string, bitrate int, mp4Path string) error {
 			if reg1 == nil {
 				return errors.Wrap(err, "regexp.MustCompile")
 			}
-			//根据规则提取关键信息
-			result1 := reg1.FindAllStringSubmatch(line, -1)
-			if len(result1) == 0 {
-				return errors.Wrap(err, "regexp.FindAllStringSubmatch")
-			}
-			keyUrl := result1[0][1]
-			keyFileName := ""
-			if v, ok := keys[keyUrl]; ok {
-				keyFileName = v
-			} else {
-				keyFileName = fmt.Sprintf("key%d", len(keys))
-				err := httplib.Get(keyUrl).ToFile(filepath.Join(m3u8Dir, keyFileName))
-				if err != nil {
-					return errors.Wrap(err, "httplib.Get")
-				}
-				keys[keyUrl] = keyFileName
-			}
-			line = reg1.ReplaceAllString(line, fmt.Sprintf(`URI="./%s"`, keyFileName))
+			line = reg1.ReplaceAllString(line, fmt.Sprintf(`URI="./%s"`, "key"))
 		} else if strings.HasPrefix(line, "#") {
 		} else {
 			parm := strings.Split(line, "?")
@@ -110,7 +108,18 @@ func (f *Ffmpeg) asyncDownload(t *task) {
 }
 
 func (f *Ffmpeg) doDownloadTs(tsUrl, savePath string) error {
-	err := httplib.Get(tsUrl).ToFile(savePath)
+	resp, err := f.httpclient.Get(tsUrl)
+	saveFile, err := os.Create(savePath)
+	if err != nil {
+		return err
+	}
+	defer saveFile.Close()
+
+	if resp.Body == nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	_, err = io.Copy(saveFile, resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "httplib.Get")
 	}
