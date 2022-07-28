@@ -19,18 +19,18 @@ require (
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/peterh/liner v1.2.1
 	github.com/pkg/errors v0.9.1
-	github.com/schollz/progressbar/v3 v3.8.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/soniakeys/quant v1.0.0 // indirect
 	github.com/tidwall/gjson v1.8.0
 	github.com/tidwall/pretty v1.1.1 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/wayneashleyberry/terminal-dimensions v1.0.0 // indirect
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/image v0.0.0-20210607152325-775e3b0c77b9 // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.1.1
 	gorm.io/gorm v1.21.12
+	github.com/HarryWang29/progressbar/v4 v4.0.5
+	github.com/rivo/uniseg v0.2.0
 	honnef.co/go/js/dom v0.0.0-20200509013220-d4405f7ab4d8 // indirect
 )

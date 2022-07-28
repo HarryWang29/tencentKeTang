@@ -1,11 +1,11 @@
 package ffmpeg
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type task struct {
@@ -22,6 +22,7 @@ func (f *Ffmpeg) taskProcess() {
 	for {
 		task := <-f.workerChannel
 		_ = f.doDownloadTs(task.tsUrl, task.savePath)
+		f.bars.BarAdd("down|"+task.fileName, 1)
 		finishCount, ok := f.finishMap.Load(task.vodUrl)
 		if !ok {
 			finishCount = new(int)
@@ -36,7 +37,6 @@ func (f *Ffmpeg) taskProcess() {
 			continue
 		}
 		if taskCount.(int) == finishCount.(int) {
-			fmt.Printf("下载完成：%s\n", task.fileName)
 			f.finishChannel <- task
 		}
 	}
@@ -46,7 +46,11 @@ func (f *Ffmpeg) finish() {
 	for {
 		task := <-f.finishChannel
 		task.fileName = strings.ReplaceAll(task.fileName, filepath.Ext(task.fileName), ".mp4")
-		fmt.Printf("开始合成：%s\n", task.fileName)
+		for f.mergeFileName == "" {
+			f.mergeFileName = task.fileName
+			time.Sleep(10 * time.Millisecond)
+		}
+		_ = f.addMergeBar(task.fileName, int(f.remoteDuration*1000000))
 		err := f.merge(task.m3u8Path, filepath.Join(task.m3u8Dir, "..", task.fileName), task.bitrate)
 		if err != nil {
 			log.Printf("merge error: %v", err)
@@ -57,6 +61,5 @@ func (f *Ffmpeg) finish() {
 			log.Printf("remove error: %v", err)
 			continue
 		}
-		fmt.Printf("合成完成：%s\n", task.fileName)
 	}
 }

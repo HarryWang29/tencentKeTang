@@ -20,7 +20,6 @@ func (f *Ffmpeg) downloadTs(vodUrl, dk string, bitrate int, mp4Path string) erro
 	dir := filepath.Dir(mp4Path)
 	fileName := filepath.Base(mp4Path)
 	m3u8Dir := filepath.Join(dir, fileName+"m3u8")
-	fmt.Printf("开始下载：%s\n", fileName)
 
 	err := os.MkdirAll(m3u8Dir, os.ModePerm)
 	if err != nil {
@@ -57,6 +56,8 @@ func (f *Ffmpeg) downloadTs(vodUrl, dk string, bitrate int, mp4Path string) erro
 	if err != nil {
 		return errors.Wrap(err, "os.OpenFile")
 	}
+	//先用lines设置max
+	f.addDownloadBar(fileName, len(lines))
 
 	tsCount := 0
 	for _, line := range lines {
@@ -92,6 +93,8 @@ func (f *Ffmpeg) downloadTs(vodUrl, dk string, bitrate int, mp4Path string) erro
 			break
 		}
 	}
+	//max设置完成后更新
+	f.bars.BarChangeMax("down|"+fileName, tsCount)
 	_ = file.Close()
 
 	return nil
@@ -136,13 +139,14 @@ func (f *Ffmpeg) merge(src, dst string, bitrate int) error {
 		args = append(args, f.ffmpegParams...)
 		args = append(args, "-b:v", fmt.Sprint(bitrate))
 	}
-	//args = append(args, "-progress", fmt.Sprintf(`tcp://%s`, sockFileName))
+	args = append(args, "-progress", fmt.Sprintf(`tcp://%s`, f.address))
 	args = append(args, dst, "-y")
 	cmd := exec.Command(f.ffmpegExec, args...)
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
 	err := cmd.Run()
 	if err != nil {
+		fmt.Printf("%s\n", buf.String())
 		return errors.Wrapf(err, "exec.Run err: %s", buf.String())
 	}
 
