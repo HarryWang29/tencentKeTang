@@ -10,31 +10,23 @@ import (
 
 type XLoginReq struct {
 	AppID          string `url:"appid"`
+	HideCloseIcon  string `url:"hide_close_icon"`
 	DaID           string `url:"daid"`
-	Style          string `url:"style"`
-	Theme          string `url:"theme"`
-	LoginText      string `url:"login_text"`
-	HideTitleBar   string `url:"hide_title_bar"`
-	HideBorder     string `url:"hide_border"`
 	Target         string `url:"target"`
 	SUrl           string `url:"s_url"`
-	Pt3rdAID       string `url:"pt_3rd_aid"`
-	PtFeedbackLink string `url:"pt_feedback_link"`
+	ProxyUrl       string `url:"proxy_url"`
+	LowLoginEnable string `url:"low_login_enable"`
 }
 
 func (a *api) XLogin() (cookie []*http.Cookie, err error) {
 	req := XLoginReq{
-		AppID:          "716027609",
-		DaID:           "383",
-		Style:          "33",
-		Theme:          "2",
-		LoginText:      "授权并登录",
-		HideTitleBar:   "1",
-		HideBorder:     "1",
+		AppID:          "715030901",
+		HideCloseIcon:  "1",
+		DaID:           "233",
 		Target:         "self",
-		SUrl:           "https://graph.qq.com/oauth2.0/login_jump",
-		Pt3rdAID:       "101487368",
-		PtFeedbackLink: "https://support.qq.com/products/77942?customInfo=www.qq.com.appid101487368",
+		SUrl:           "https://ke.qq.com/login_proxy.html",
+		ProxyUrl:       "https://ke.qq.com/login_proxy.html",
+		LowLoginEnable: "1",
 	}
 	v := url.Values{}
 	err = schema.NewEncoder().Encode(req, v)

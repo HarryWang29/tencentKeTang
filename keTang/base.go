@@ -23,6 +23,7 @@ const (
 	PtQrLogin           = "https://ssl.ptlogin2.qq.com/ptqrlogin?"
 	Check               = "https://ssl.ptlogin2.qq.com/check?"
 	DescribeRecVideoUri = "https://ke.qq.com/cgi-proxy/rec_video/describe_rec_video?"
+	QQLoginUri          = "https://ke.qq.com/cgi-proxy/account_login/qq_login?"
 )
 
 type Config struct {
@@ -46,6 +47,7 @@ type Api interface {
 	PtQrShow() (cookie []*http.Cookie, img []byte, err error)
 	PtQrLogin(ptQrToken int64, loginSig, ptDrvs, sID string) (*PtQrLoginResp, error)
 	DescribeRecVideo(req *DescribeRecVideoReq) (info *RecVideoInfos, dk string, err error)
+	QQLogin() (cookie []*http.Cookie, err error)
 }
 
 type api struct {
